@@ -3,4 +3,8 @@
     <string name="version_1_0">Version 1.0</string>
     <string name="discover_delicious_recipes">Discover Delicious Recipes</string>
     <string name="recipe_app">Recipe App</string>
+    <string name="skip">Skip</string>
+    <string name="next">Next</string>
+    <string name="get_started">Get Started</string>
+    <string name="onboarding_image">Onboarding Image</string>
 </resources>

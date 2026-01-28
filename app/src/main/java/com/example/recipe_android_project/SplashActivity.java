@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.splashscreen.SplashScreen;
 
 import com.airbnb.lottie.LottieAnimationView;
+import com.example.recipe_android_project.features.onboarding.view.OnboardingActivity;
 
 @SuppressLint("CustomSplashScreen")
 public class SplashActivity extends AppCompatActivity {
@@ -84,10 +85,13 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void navigateToMain() {
-        Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+        Intent intent = new Intent(SplashActivity.this, OnboardingActivity.class);
+
+        // Prevent lag by starting activity before animation ends visually
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
         startActivity(intent);
 
-        // Add smooth transition animation
+        // Use fade transition
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
 
         finish();
