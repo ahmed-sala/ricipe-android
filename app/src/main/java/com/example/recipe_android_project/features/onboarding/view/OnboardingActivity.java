@@ -14,6 +14,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.MainActivity;
 import com.example.recipe_android_project.common.SharedPreferencesManager;
+import com.example.recipe_android_project.features.auth.view.AuthActivity;
 import com.example.recipe_android_project.features.onboarding.adapter.OnboardingAdapter;
 import com.example.recipe_android_project.features.onboarding.contract.OnboardingContract;
 import com.example.recipe_android_project.features.onboarding.data.local.OnboardingLocalDataSource;
@@ -179,8 +180,8 @@ public class OnboardingActivity extends AppCompatActivity implements OnboardingC
 
     @Override
     public void navigateToMain() {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        Intent intent = new Intent(this, AuthActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
         startActivity(intent);
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         finish();

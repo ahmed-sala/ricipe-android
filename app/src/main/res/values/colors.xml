@@ -2,11 +2,23 @@
 <resources>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="colorGray">#BDBDBD</color>
-    <color name="primary">#e27036</color>
+
+    <!-- Brand -->
+    <color name="primary">#E27036</color>
+    <color name="primary_light">#F8F1EC</color>
     <color name="primary_dark">#E64A19</color>
-    <color name="secondary">#FFC107</color>
     <color name="splash_background">#FFFFFF</color>
+    <color name="background_card">#322820</color>
+    <color name="field_background">#F5F5F5</color>
+
+    <!-- Text -->
     <color name="text_primary">#1C1C1E</color>
     <color name="text_secondary">#8A8A8E</color>
+    <color name="text_hint">#9AA0A6</color>
+    <color name="colorGray">#BDBDBD</color>
+    <color name="error">
+#D32F2F
+    </color>
+    <!-- UI -->
+    <color name="divider">#E6E6E6</color>
 </resources>

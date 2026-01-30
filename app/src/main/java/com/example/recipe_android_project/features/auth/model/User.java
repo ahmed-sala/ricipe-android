@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.auth.domain.model;
+package com.example.recipe_android_project.features.auth.model;
 
 import java.io.Serializable;
 
