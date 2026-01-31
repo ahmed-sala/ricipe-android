@@ -15,3 +15,5 @@
 local.properties
 google-service.json
 app/google-service.json
+# Firebase / Google Services
+**/google-services.json
