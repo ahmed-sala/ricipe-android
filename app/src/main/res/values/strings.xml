@@ -41,4 +41,9 @@
     <string name="success">Success!</string>
     <string name="continue_text">Continue</string>
     <string name="ok">OK</string>
+    <string name="profile">Profile</string>
+    <string name="plan">Plan</string>
+    <string name="favourites">Favourites</string>
+    <string name="search">Search</string>
+    <string name="home">Home</string>
 </resources>
