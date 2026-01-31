@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.common;
+package com.example.recipe_android_project.core.helper;
 
 import android.content.Context;
 import android.content.SharedPreferences;

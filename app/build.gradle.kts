@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
-    id("kotlin-parcelize")
-
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -52,6 +51,11 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.bcrypt)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

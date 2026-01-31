@@ -32,5 +32,13 @@
     <string name="full_name">Full Name</string>
     <string name="ahmed_salah">Ahmed Salah</string>
     <string name="register">Register</string>
-
+    <string name="try_again">TRY AGAIN</string>
+    <string name="something_went_wrong">Something went wrong</string>
+    <string name="oops">Oops!</string>
+    <string name="please_wait">Please wait…</string>
+    <string name="logging_in">Logging in…</string>
+    <string name="creating_account">Creating account…</string>
+    <string name="success">Success!</string>
+    <string name="continue_text">Continue</string>
+    <string name="ok">OK</string>
 </resources>

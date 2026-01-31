@@ -17,7 +17,6 @@
         android:paddingTop="20dp"
         android:paddingBottom="22dp">
 
-        <!-- Close circle button -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/btnClose"
             android:layout_width="50dp"

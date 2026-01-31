@@ -16,9 +16,18 @@
     <color name="text_secondary">#8A8A8E</color>
     <color name="text_hint">#9AA0A6</color>
     <color name="colorGray">#BDBDBD</color>
-    <color name="error">
-#D32F2F
-    </color>
+
+    <!-- Status Colors -->
+    <color name="error">#E53935</color>
+    <color name="error_light">#FFEBEE</color>
+    <color name="success">#43A047</color>
+    <color name="success_light">#E8F5E9</color>
+    <color name="warning">#FB8C00</color>
+    <color name="warning_light">#FFF3E0</color>
+    <color name="info">#1E88E5</color>
+    <color name="info_light">#E3F2FD</color>
     <!-- UI -->
     <color name="divider">#E6E6E6</color>
+    <color name="overlay">#80000000</color>
+
 </resources>
