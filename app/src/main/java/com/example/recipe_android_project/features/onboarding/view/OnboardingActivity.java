@@ -12,8 +12,7 @@ import androidx.core.content.ContextCompat;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.recipe_android_project.R;
-import com.example.recipe_android_project.MainActivity;
-import com.example.recipe_android_project.common.SharedPreferencesManager;
+import com.example.recipe_android_project.core.helper.SharedPreferencesManager;
 import com.example.recipe_android_project.features.auth.view.AuthActivity;
 import com.example.recipe_android_project.features.onboarding.adapter.OnboardingAdapter;
 import com.example.recipe_android_project.features.onboarding.contract.OnboardingContract;

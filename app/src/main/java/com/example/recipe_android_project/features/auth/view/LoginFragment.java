@@ -1,9 +1,12 @@
 package com.example.recipe_android_project.features.auth.view;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextPaint;
+import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.view.LayoutInflater;
@@ -17,19 +20,28 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
+import com.example.recipe_android_project.MainActivity;
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.ui.AlertDialogHelper;
+import com.example.recipe_android_project.core.ui.LoadingDialog;
+import com.example.recipe_android_project.core.ui.SnackbarHelper;
+import com.example.recipe_android_project.features.auth.contract.LoginContract;
+import com.example.recipe_android_project.features.auth.presenter.LoginPresenter;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
-public class LoginFragment extends Fragment {
+public class LoginFragment extends Fragment implements LoginContract.View {
 
     private MaterialCardView btnClose;
     private MaterialButton btnLogin, btnGoogle;
     private TextView tvForgot, tvBottom;
     private TextInputLayout emailTil, passTil;
     private TextInputEditText emailEt, passEt;
+
+    private LoginPresenter presenter;
+    private LoadingDialog loadingDialog;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -41,9 +53,17 @@ public class LoginFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        initPresenter();
         initViews(view);
         setupBottomText();
-        setupClickListeners(view);
+        setupClickListeners();
+        setupTextWatchers();
+    }
+
+    private void initPresenter() {
+        presenter = new LoginPresenter(requireContext());
+        presenter.attachView(this);
+        loadingDialog = new LoadingDialog(requireContext());
     }
 
     private void initViews(View view) {
@@ -53,7 +73,6 @@ public class LoginFragment extends Fragment {
         tvForgot = view.findViewById(R.id.tvForgot);
         tvBottom = view.findViewById(R.id.tvBottom);
 
-        // Direct references - no more setupFields() needed!
         emailTil = view.findViewById(R.id.emailTil);
         emailEt = view.findViewById(R.id.emailEt);
         passTil = view.findViewById(R.id.passTil);
@@ -93,36 +112,141 @@ public class LoginFragment extends Fragment {
         tvBottom.setHighlightColor(android.graphics.Color.TRANSPARENT);
     }
 
-    private void setupClickListeners(View view) {
-        btnClose.setOnClickListener(v -> Navigation.findNavController(v).popBackStack());
-
-        tvForgot.setOnClickListener(v -> {
-            // TODO: navigate to forgot password screen
+    private void setupClickListeners() {
+        btnClose.setOnClickListener(v -> {
+            if (getActivity() != null) {
+                getActivity().finish();
+            }
         });
+
+        tvForgot.setOnClickListener(v -> navigateToForgotPassword());
 
         btnGoogle.setOnClickListener(v -> {
             // TODO: Google sign-in
+            showErrorSnackbar("Google Sign-In coming soon!");
         });
 
         btnLogin.setOnClickListener(v -> {
-            String email = (emailEt.getText() != null) ? emailEt.getText().toString().trim() : "";
-            String pass = (passEt.getText() != null) ? passEt.getText().toString() : "";
+            String email = getTextFromEditText(emailEt);
+            String password = getTextFromEditText(passEt);
+            presenter.login(email, password);
+        });
+    }
 
-            if (email.isEmpty()) {
-                emailTil.setError("Email is required");
-                return;
-            } else {
+    private void setupTextWatchers() {
+        emailEt.addTextChangedListener(new SimpleTextWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
                 emailTil.setError(null);
             }
+        });
 
-            if (pass.isEmpty()) {
-                passTil.setError("Password is required");
-                return;
-            } else {
+        passEt.addTextChangedListener(new SimpleTextWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
                 passTil.setError(null);
             }
-
-            // TODO: your login logic
         });
+    }
+
+    private String getTextFromEditText(TextInputEditText editText) {
+        return editText.getText() != null ? editText.getText().toString().trim() : "";
+    }
+
+    // ==================== LoginContract.View Implementation ====================
+
+    @Override
+    public void showLoading(String message) {
+        loadingDialog.show(message);
+        setButtonsEnabled(false);
+    }
+
+    @Override
+    public void hideLoading() {
+        loadingDialog.dismiss();
+        setButtonsEnabled(true);
+    }
+
+    private void setButtonsEnabled(boolean enabled) {
+        btnLogin.setEnabled(enabled);
+        btnGoogle.setEnabled(enabled);
+        btnClose.setEnabled(enabled);
+    }
+
+    @Override
+    public void showEmailError(String message) {
+        emailTil.setError(message);
+    }
+
+    @Override
+    public void showPasswordError(String message) {
+        passTil.setError(message);
+    }
+
+    @Override
+    public void clearErrors() {
+        emailTil.setError(null);
+        passTil.setError(null);
+    }
+
+    @Override
+    public void showErrorDialog(String message) {
+        AlertDialogHelper.showErrorDialog(requireContext(), message);
+    }
+
+    @Override
+    public void showSuccessDialog(String message, Runnable onContinue) {
+        AlertDialogHelper.showSuccessDialog(
+                requireContext(),
+                message,
+                onContinue::run
+        );
+    }
+
+    @Override
+    public void showErrorSnackbar(String message) {
+        SnackbarHelper.showError(requireView(), message);
+    }
+
+    @Override
+    public void showSuccessSnackbar(String message) {
+        SnackbarHelper.showSuccess(requireView(), message);
+    }
+
+    @Override
+    public void navigateToHome() {
+        Intent intent = new Intent(requireActivity(), MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        requireActivity().finish();
+    }
+
+    @Override
+    public void navigateToForgotPassword() {
+        // TODO: Navigate to forgot password
+        showErrorSnackbar("Forgot Password coming soon!");
+    }
+
+    // ==================== Lifecycle ====================
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (loadingDialog != null) {
+            loadingDialog.dismiss();
+        }
+        if (presenter != null) {
+            presenter.detachView();
+        }
+    }
+
+    // ==================== Helper Class ====================
+
+    private abstract static class SimpleTextWatcher implements TextWatcher {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {}
     }
 }

@@ -1,6 +1,6 @@
 package com.example.recipe_android_project.features.onboarding.data.local;
 
-import com.example.recipe_android_project.common.SharedPreferencesManager;
+import com.example.recipe_android_project.core.helper.SharedPreferencesManager;
 
 public class OnboardingLocalDataSource {
     private static final String KEY_ONBOARDING_COMPLETED = "onboarding_completed";

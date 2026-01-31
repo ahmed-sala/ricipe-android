@@ -36,9 +36,7 @@ public class UserEntity implements Serializable {
     @ColumnInfo(name = "password")
     private String password;
 
-    @Nullable
-    @ColumnInfo(name = "profile_image_url")
-    private String profileImageUrl;
+
 
     @ColumnInfo(name = "is_logged_in", defaultValue = "0")
     private boolean isLoggedIn;
@@ -93,14 +91,8 @@ public class UserEntity implements Serializable {
         this.password = password;
     }
 
-    @Nullable
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
 
-    public void setProfileImageUrl(@Nullable String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
-    }
+
 
     public boolean isLoggedIn() {
         return isLoggedIn;

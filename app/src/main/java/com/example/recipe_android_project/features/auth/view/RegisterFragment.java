@@ -1,9 +1,14 @@
 package com.example.recipe_android_project.features.auth.view;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextPaint;
+import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.view.LayoutInflater;
@@ -17,13 +22,19 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
+import com.example.recipe_android_project.MainActivity;
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.ui.AlertDialogHelper;
+import com.example.recipe_android_project.core.ui.LoadingDialog;
+import com.example.recipe_android_project.core.ui.SnackbarHelper;
+import com.example.recipe_android_project.features.auth.contract.RegisterContract;
+import com.example.recipe_android_project.features.auth.presenter.RegisterPresenter;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
-public class RegisterFragment extends Fragment {
+public class RegisterFragment extends Fragment implements RegisterContract.View {
 
     private MaterialCardView btnClose;
     private MaterialButton btnRegister, btnGoogle;
@@ -31,6 +42,13 @@ public class RegisterFragment extends Fragment {
 
     private TextInputLayout nameTil, emailTil, passTil;
     private TextInputEditText nameEt, emailEt, passEt;
+
+    private RegisterPresenter presenter;
+    private LoadingDialog loadingDialog;
+
+    // Debounce for email check
+    private final Handler emailCheckHandler = new Handler(Looper.getMainLooper());
+    private Runnable emailCheckRunnable;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -42,9 +60,17 @@ public class RegisterFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        initPresenter();
         initViews(view);
         setupBottomText();
-        setupClickListeners(view);
+        setupClickListeners();
+        setupTextWatchers();
+    }
+
+    private void initPresenter() {
+        presenter = new RegisterPresenter(requireContext());
+        presenter.attachView(this);
+        loadingDialog = new LoadingDialog(requireContext());
     }
 
     private void initViews(View view) {
@@ -77,8 +103,7 @@ public class RegisterFragment extends Fragment {
             ClickableSpan loginSpan = new ClickableSpan() {
                 @Override
                 public void onClick(@NonNull View widget) {
-                    Navigation.findNavController(requireView())
-                            .navigate(R.id.action_registerFragment_to_loginFragment);
+                    navigateToLogin();
                 }
 
                 @Override
@@ -96,40 +121,169 @@ public class RegisterFragment extends Fragment {
         tvBottom.setHighlightColor(android.graphics.Color.TRANSPARENT);
     }
 
-    private void setupClickListeners(View view) {
-        btnClose.setOnClickListener(v -> Navigation.findNavController(v).popBackStack());
+    private void setupClickListeners() {
+        btnClose.setOnClickListener(v -> {
+            if (getActivity() != null) {
+                getActivity().finish();
+            }
+        });
 
         btnGoogle.setOnClickListener(v -> {
-            // TODO: Google sign-up (same as login)
+            showErrorSnackbar("Google Sign-Up coming soon!");
         });
 
         btnRegister.setOnClickListener(v -> {
-            String name = (nameEt.getText() != null) ? nameEt.getText().toString().trim() : "";
-            String email = (emailEt.getText() != null) ? emailEt.getText().toString().trim() : "";
-            String pass = (passEt.getText() != null) ? passEt.getText().toString() : "";
+            String name = getTextFromEditText(nameEt);
+            String email = getTextFromEditText(emailEt);
+            String password = getTextFromEditText(passEt);
+            presenter.register(name, email, password);
+        });
+    }
 
-            if (name.isEmpty()) {
-                nameTil.setError("Full name is required");
-                return;
-            } else {
+    private void setupTextWatchers() {
+        nameEt.addTextChangedListener(new SimpleTextWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
                 nameTil.setError(null);
             }
+        });
 
-            if (email.isEmpty()) {
-                emailTil.setError("Email is required");
-                return;
-            } else {
+        emailEt.addTextChangedListener(new SimpleTextWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
                 emailTil.setError(null);
-            }
 
-            if (pass.isEmpty()) {
-                passTil.setError("Password is required");
-                return;
-            } else {
+                // Debounce email exists check
+                if (emailCheckRunnable != null) {
+                    emailCheckHandler.removeCallbacks(emailCheckRunnable);
+                }
+
+                String email = s.toString().trim();
+                if (email.length() > 5 && email.contains("@")) {
+                    emailCheckRunnable = () -> presenter.checkEmailExists(email);
+                    emailCheckHandler.postDelayed(emailCheckRunnable, 500);
+                }
+            }
+        });
+
+        passEt.addTextChangedListener(new SimpleTextWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
                 passTil.setError(null);
             }
-
-            // TODO: your register logic
         });
+    }
+
+    private String getTextFromEditText(TextInputEditText editText) {
+        return editText.getText() != null ? editText.getText().toString().trim() : "";
+    }
+
+    // ==================== RegisterContract.View Implementation ====================
+
+    @Override
+    public void showLoading(String message) {
+        loadingDialog.show(message);
+        setButtonsEnabled(false);
+    }
+
+    @Override
+    public void hideLoading() {
+        loadingDialog.dismiss();
+        setButtonsEnabled(true);
+    }
+
+    private void setButtonsEnabled(boolean enabled) {
+        btnRegister.setEnabled(enabled);
+        btnGoogle.setEnabled(enabled);
+        btnClose.setEnabled(enabled);
+    }
+
+    @Override
+    public void showNameError(String message) {
+        nameTil.setError(message);
+    }
+
+    @Override
+    public void showEmailError(String message) {
+        emailTil.setError(message);
+    }
+
+    @Override
+    public void showPasswordError(String message) {
+        passTil.setError(message);
+    }
+
+    @Override
+    public void clearErrors() {
+        nameTil.setError(null);
+        emailTil.setError(null);
+        passTil.setError(null);
+    }
+
+    @Override
+    public void showErrorDialog(String message) {
+        AlertDialogHelper.showErrorDialog(requireContext(), message);
+    }
+
+    @Override
+    public void showSuccessDialog(String message, Runnable onContinue) {
+        AlertDialogHelper.showSuccessDialog(
+                requireContext(),
+                message,
+                onContinue::run
+        );
+    }
+
+    @Override
+    public void showErrorSnackbar(String message) {
+        SnackbarHelper.showError(requireView(), message);
+    }
+
+    @Override
+    public void showSuccessSnackbar(String message) {
+        SnackbarHelper.showSuccess(requireView(), message);
+    }
+
+    @Override
+    public void navigateToHome() {
+        Intent intent = new Intent(requireActivity(), MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        requireActivity().finish();
+    }
+
+    @Override
+    public void navigateToLogin() {
+        Navigation.findNavController(requireView())
+                .navigate(R.id.action_registerFragment_to_loginFragment);
+    }
+
+    // ==================== Lifecycle ====================
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+
+        // Cancel pending email check
+        if (emailCheckRunnable != null) {
+            emailCheckHandler.removeCallbacks(emailCheckRunnable);
+        }
+
+        if (loadingDialog != null) {
+            loadingDialog.dismiss();
+        }
+        if (presenter != null) {
+            presenter.detachView();
+        }
+    }
+
+    // ==================== Helper Class ====================
+
+    private abstract static class SimpleTextWatcher implements TextWatcher {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {}
     }
 }
