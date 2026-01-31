@@ -29,6 +29,7 @@ import com.example.recipe_android_project.core.ui.LoadingDialog;
 import com.example.recipe_android_project.core.ui.SnackbarHelper;
 import com.example.recipe_android_project.features.auth.contract.RegisterContract;
 import com.example.recipe_android_project.features.auth.presenter.RegisterPresenter;
+import com.example.recipe_android_project.features.dashboard.view.DashboardActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
@@ -246,7 +247,7 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
 
     @Override
     public void navigateToHome() {
-        Intent intent = new Intent(requireActivity(), MainActivity.class);
+        Intent intent = new Intent(requireActivity(), DashboardActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         requireActivity().finish();

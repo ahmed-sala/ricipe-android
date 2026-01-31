@@ -27,6 +27,7 @@ import com.example.recipe_android_project.core.ui.LoadingDialog;
 import com.example.recipe_android_project.core.ui.SnackbarHelper;
 import com.example.recipe_android_project.features.auth.contract.LoginContract;
 import com.example.recipe_android_project.features.auth.presenter.LoginPresenter;
+import com.example.recipe_android_project.features.dashboard.view.DashboardActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
@@ -215,7 +216,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
 
     @Override
     public void navigateToHome() {
-        Intent intent = new Intent(requireActivity(), MainActivity.class);
+        Intent intent = new Intent(requireActivity(), DashboardActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         requireActivity().finish();
