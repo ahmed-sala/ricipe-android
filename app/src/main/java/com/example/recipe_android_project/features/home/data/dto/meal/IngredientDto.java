@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.home.data.remote.dto.meal;
+package com.example.recipe_android_project.features.home.data.dto.meal;
 
 import androidx.annotation.Nullable;
 

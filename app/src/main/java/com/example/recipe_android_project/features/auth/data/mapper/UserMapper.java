@@ -39,14 +39,12 @@ public class UserMapper {
         return users;
     }
 
-    // ==================== DOMAIN -> ENTITY ====================
 
     public static UserEntity toEntity(User user) {
         if (user == null) return null;
 
         UserEntity entity = new UserEntity();
 
-        // Generate ID if not present
         if (user.getId() != null && !user.getId().isEmpty()) {
             entity.setId(user.getId());
         } else {
@@ -76,7 +74,6 @@ public class UserMapper {
         return entities;
     }
 
-    // ==================== HELPER: Create new user ====================
 
     public static User createNewUser(String fullName, String email, String password) {
         User user = new User();

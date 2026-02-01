@@ -24,15 +24,12 @@ public class LoginPresenter extends BasePresenter<LoginContract.View> implements
     public void login(String email, String password) {
         if (!isViewAttached()) return;
 
-        // Clear previous errors
         getView().clearErrors();
 
-        // Validate inputs
         if (!validateInputs(email, password)) {
             return;
         }
 
-        // Show loading
         getView().showLoading("Logging in…");
 
         authRepository.login(email, password, new ResultCallback<User>() {
@@ -64,7 +61,6 @@ public class LoginPresenter extends BasePresenter<LoginContract.View> implements
     private boolean validateInputs(String email, String password) {
         boolean isValid = true;
 
-        // Validate email
         if (email == null || email.trim().isEmpty()) {
             getView().showEmailError("Email is required");
             isValid = false;
@@ -73,7 +69,6 @@ public class LoginPresenter extends BasePresenter<LoginContract.View> implements
             isValid = false;
         }
 
-        // Validate password
         if (password == null || password.isEmpty()) {
             getView().showPasswordError("Password is required");
             isValid = false;

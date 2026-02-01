@@ -64,7 +64,6 @@ public class AlertDialogHelper {
         return showErrorDialog(context, context.getString(R.string.oops), message, null);
     }
 
-    // ==================== SUCCESS DIALOG ====================
 
     public static Dialog showSuccessDialog(
             @NonNull Context context,

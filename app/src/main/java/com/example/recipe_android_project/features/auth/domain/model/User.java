@@ -27,7 +27,6 @@ public class User implements Serializable {
         this.updatedAt = System.currentTimeMillis();
     }
 
-    // ==================== HELPER METHODS ====================
 
     public boolean isValid() {
         return isValidFullName() && isValidEmail() && isValidPassword();
@@ -81,7 +80,6 @@ public class User implements Serializable {
 
 
 
-    // ==================== GETTERS & SETTERS ====================
 
     public String getId() {
         return id;

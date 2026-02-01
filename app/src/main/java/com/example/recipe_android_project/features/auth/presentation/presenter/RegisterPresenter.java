@@ -24,15 +24,12 @@ public class RegisterPresenter extends BasePresenter<RegisterContract.View> impl
     public void register(String fullName, String email, String password) {
         if (!isViewAttached()) return;
 
-        // Clear previous errors
         getView().clearErrors();
 
-        // Validate inputs
         if (!validateInputs(fullName, email, password)) {
             return;
         }
 
-        // Show loading
         getView().showLoading("Creating account…");
 
         authRepository.register(fullName, email, password, new ResultCallback<User>() {
@@ -64,7 +61,6 @@ public class RegisterPresenter extends BasePresenter<RegisterContract.View> impl
     private boolean validateInputs(String fullName, String email, String password) {
         boolean isValid = true;
 
-        // Validate name
         if (fullName == null || fullName.trim().isEmpty()) {
             getView().showNameError("Full name is required");
             isValid = false;
@@ -73,7 +69,6 @@ public class RegisterPresenter extends BasePresenter<RegisterContract.View> impl
             isValid = false;
         }
 
-        // Validate email
         if (email == null || email.trim().isEmpty()) {
             getView().showEmailError("Email is required");
             isValid = false;
@@ -82,7 +77,6 @@ public class RegisterPresenter extends BasePresenter<RegisterContract.View> impl
             isValid = false;
         }
 
-        // Validate password
         if (password == null || password.isEmpty()) {
             getView().showPasswordError("Password is required");
             isValid = false;
@@ -114,7 +108,6 @@ public class RegisterPresenter extends BasePresenter<RegisterContract.View> impl
 
             @Override
             public void onError(Exception e) {
-                // Ignore
             }
         });
     }

@@ -59,7 +59,6 @@ public class AuthDecisionFragment extends Fragment {
         String termsWord = getString(R.string.terms);
         String privacyWord = getString(R.string.privacy_policy);
 
-        // ✅ FORMAT the string (this removes %1$s %2$s)
         String fullText = getString(R.string.terms_privacy_full, termsWord, privacyWord);
 
         SpannableString spannable = new SpannableString(fullText);
@@ -102,18 +101,11 @@ public class AuthDecisionFragment extends Fragment {
         textTerms.setHighlightColor(Color.TRANSPARENT);
     }
     private void openTerms() {
-        // Option A: open Activity
-//        startActivity(new Intent(requireContext(), TermsActivity.class));
 
-        // Option B (if you prefer Navigation):
-        // Navigation.findNavController(requireView()).navigate(R.id.action_authDecisionFragment_to_termsFragment);
     }
 
     private void openPrivacy() {
-//        startActivity(new Intent(requireContext(), PrivacyActivity.class));
 
-        // Or Navigation:
-        // Navigation.findNavController(requireView()).navigate(R.id.action_authDecisionFragment_to_privacyFragment);
     }
 
     private void setupClickListeners() {
@@ -124,7 +116,6 @@ public class AuthDecisionFragment extends Fragment {
                 Navigation.findNavController(v).navigate(R.id.action_authDecisionFragment_to_loginFragment));
 
         btnGoogle.setOnClickListener(v -> {
-            // Google Sign In
         });
 
         btnGuest.setOnClickListener(v -> navigateToMain());

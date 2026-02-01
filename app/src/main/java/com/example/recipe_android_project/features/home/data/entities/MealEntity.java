@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.home.data.local.entity;
+package com.example.recipe_android_project.features.home.data.entities;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;

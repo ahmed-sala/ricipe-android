@@ -31,7 +31,6 @@ public class AuthRemoteDatasource {
         this.firestore = FirebaseFirestore.getInstance();
     }
 
-    // ==================== NETWORK CHECK ====================
 
     public boolean isNetworkAvailable() {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -42,7 +41,6 @@ public class AuthRemoteDatasource {
         return false;
     }
 
-    // ==================== REGISTER ====================
 
     public UserEntity registerUser(String fullName, String email, String password) throws Exception {
         try {
@@ -62,7 +60,6 @@ public class AuthRemoteDatasource {
             user.setCreatedAt(System.currentTimeMillis());
             user.setUpdatedAt(System.currentTimeMillis());
 
-            // Save to Firestore
             saveUserToFirestore(user);
 
             return user;
@@ -71,7 +68,6 @@ public class AuthRemoteDatasource {
         }
     }
 
-    // ==================== LOGIN ====================
 
     public UserEntity login(String email, String password) throws Exception {
         try {
@@ -83,7 +79,6 @@ public class AuthRemoteDatasource {
                 throw new Exception("Firebase login failed");
             }
 
-            // Get user data from Firestore
             UserEntity user = getUserFromFirestore(firebaseUser.getUid());
 
             if (user == null) {
@@ -101,7 +96,6 @@ public class AuthRemoteDatasource {
         }
     }
 
-    // ==================== CHECK USER EXISTS ====================
 
     public boolean isUserExistsInFirebase(String email) {
         try {
@@ -117,7 +111,6 @@ public class AuthRemoteDatasource {
         }
     }
 
-    // ==================== CREATE USER IN FIREBASE (for sync) ====================
 
     public UserEntity createUserInFirebase(UserEntity localUser, String password) throws Exception {
         try {
@@ -140,7 +133,6 @@ public class AuthRemoteDatasource {
         }
     }
 
-    // ==================== FIRESTORE OPERATIONS ====================
 
     public void saveUserToFirestore(UserEntity user) throws Exception {
         try {
@@ -209,7 +201,6 @@ public class AuthRemoteDatasource {
         }
     }
 
-    // ==================== LOGOUT ====================
 
     public void logout() {
         firebaseAuth.signOut();

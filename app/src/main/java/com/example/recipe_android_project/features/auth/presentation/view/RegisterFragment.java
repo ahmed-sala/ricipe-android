@@ -46,7 +46,6 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
     private RegisterPresenter presenter;
     private LoadingDialog loadingDialog;
 
-    // Debounce for email check
     private final Handler emailCheckHandler = new Handler(Looper.getMainLooper());
     private Runnable emailCheckRunnable;
 
@@ -153,7 +152,6 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
             public void afterTextChanged(Editable s) {
                 emailTil.setError(null);
 
-                // Debounce email exists check
                 if (emailCheckRunnable != null) {
                     emailCheckHandler.removeCallbacks(emailCheckRunnable);
                 }
@@ -178,7 +176,6 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
         return editText.getText() != null ? editText.getText().toString().trim() : "";
     }
 
-    // ==================== RegisterContract.View Implementation ====================
 
     @Override
     public void showLoading(String message) {
@@ -258,13 +255,11 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
                 .navigate(R.id.action_registerFragment_to_loginFragment);
     }
 
-    // ==================== Lifecycle ====================
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
 
-        // Cancel pending email check
         if (emailCheckRunnable != null) {
             emailCheckHandler.removeCallbacks(emailCheckRunnable);
         }
@@ -277,7 +272,6 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
         }
     }
 
-    // ==================== Helper Class ====================
 
     private abstract static class SimpleTextWatcher implements TextWatcher {
         @Override

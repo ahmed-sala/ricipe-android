@@ -122,7 +122,6 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         tvForgot.setOnClickListener(v -> navigateToForgotPassword());
 
         btnGoogle.setOnClickListener(v -> {
-            // TODO: Google sign-in
             showErrorSnackbar("Google Sign-In coming soon!");
         });
 
@@ -153,7 +152,6 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         return editText.getText() != null ? editText.getText().toString().trim() : "";
     }
 
-    // ==================== LoginContract.View Implementation ====================
 
     @Override
     public void showLoading(String message) {
@@ -223,11 +221,9 @@ public class LoginFragment extends Fragment implements LoginContract.View {
 
     @Override
     public void navigateToForgotPassword() {
-        // TODO: Navigate to forgot password
         showErrorSnackbar("Forgot Password coming soon!");
     }
 
-    // ==================== Lifecycle ====================
 
     @Override
     public void onDestroyView() {
@@ -240,7 +236,6 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         }
     }
 
-    // ==================== Helper Class ====================
 
     private abstract static class SimpleTextWatcher implements TextWatcher {
         @Override

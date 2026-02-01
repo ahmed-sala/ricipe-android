@@ -1,7 +1,7 @@
 package com.example.recipe_android_project.features.home.data.mapper;
 
-import com.example.recipe_android_project.features.home.data.local.entity.MealEntity;
-import com.example.recipe_android_project.features.home.data.remote.dto.meal.MealDto;
+import com.example.recipe_android_project.features.home.data.entities.MealEntity;
+import com.example.recipe_android_project.features.home.data.dto.meal.MealDto;
 import com.example.recipe_android_project.features.home.model.Ingredient;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.google.gson.Gson;
