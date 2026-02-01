@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.auth.view;
+package com.example.recipe_android_project.features.auth.presentation.view;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -20,13 +20,12 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
-import com.example.recipe_android_project.MainActivity;
 import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.core.ui.AlertDialogHelper;
 import com.example.recipe_android_project.core.ui.LoadingDialog;
 import com.example.recipe_android_project.core.ui.SnackbarHelper;
-import com.example.recipe_android_project.features.auth.contract.LoginContract;
-import com.example.recipe_android_project.features.auth.presenter.LoginPresenter;
+import com.example.recipe_android_project.features.auth.presentation.contract.LoginContract;
+import com.example.recipe_android_project.features.auth.presentation.presenter.LoginPresenter;
 import com.example.recipe_android_project.features.dashboard.view.DashboardActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;

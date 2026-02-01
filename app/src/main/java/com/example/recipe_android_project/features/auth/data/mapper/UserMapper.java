@@ -1,7 +1,7 @@
 package com.example.recipe_android_project.features.auth.data.mapper;
 
 import com.example.recipe_android_project.features.auth.data.entities.UserEntity;
-import com.example.recipe_android_project.features.auth.model.User;
+import com.example.recipe_android_project.features.auth.domain.model.User;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.onboarding.adapter;
+package com.example.recipe_android_project.features.onboarding.presentation.view;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 
 import com.example.recipe_android_project.R;
-import com.example.recipe_android_project.features.onboarding.model.OnboardingItem;
+import com.example.recipe_android_project.features.onboarding.domain.model.OnboardingItem;
 
 import java.util.List;
 

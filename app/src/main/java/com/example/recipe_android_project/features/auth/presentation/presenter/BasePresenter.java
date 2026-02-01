@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.auth.presenter;
+package com.example.recipe_android_project.features.auth.presentation.presenter;
 
 import java.lang.ref.WeakReference;
 

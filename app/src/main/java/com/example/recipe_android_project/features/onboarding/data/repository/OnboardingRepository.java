@@ -2,7 +2,7 @@ package com.example.recipe_android_project.features.onboarding.data.repository;
 
 import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.features.onboarding.data.local.OnboardingLocalDataSource;
-import com.example.recipe_android_project.features.onboarding.model.OnboardingItem;
+import com.example.recipe_android_project.features.onboarding.domain.model.OnboardingItem;
 
 import java.util.ArrayList;
 import java.util.List;
