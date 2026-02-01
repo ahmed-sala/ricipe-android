@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.onboarding.model;
+package com.example.recipe_android_project.features.onboarding.domain.model;
 
 public class OnboardingItem {
     private final int imageRes;

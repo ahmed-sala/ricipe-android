@@ -1,10 +1,10 @@
-package com.example.recipe_android_project.features.onboarding.presnter;
+package com.example.recipe_android_project.features.onboarding.presentation.presnter;
 
 
 
-import com.example.recipe_android_project.features.onboarding.contract.OnboardingContract;
+import com.example.recipe_android_project.features.onboarding.presentation.contract.OnboardingContract;
 import com.example.recipe_android_project.features.onboarding.data.repository.OnboardingRepository;
-import com.example.recipe_android_project.features.onboarding.model.OnboardingItem;
+import com.example.recipe_android_project.features.onboarding.domain.model.OnboardingItem;
 
 import java.util.List;
 public class OnboardingPresenter implements OnboardingContract.Presenter {

@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.auth.presenter;
+package com.example.recipe_android_project.features.auth.presentation.presenter;
 
 import android.content.Context;
 import android.os.Handler;
@@ -6,43 +6,43 @@ import android.os.Looper;
 import android.util.Patterns;
 
 import com.example.recipe_android_project.core.config.ResultCallback;
-import com.example.recipe_android_project.features.auth.contract.LoginContract;
+import com.example.recipe_android_project.features.auth.presentation.contract.RegisterContract;
 import com.example.recipe_android_project.features.auth.data.repository.AuthRepository;
-import com.example.recipe_android_project.features.auth.model.User;
+import com.example.recipe_android_project.features.auth.domain.model.User;
 
-public class LoginPresenter extends BasePresenter<LoginContract.View> implements LoginContract.Presenter {
+public class RegisterPresenter extends BasePresenter<RegisterContract.View> implements RegisterContract.Presenter {
 
     private final AuthRepository authRepository;
     private final Handler mainHandler;
 
-    public LoginPresenter(Context context) {
+    public RegisterPresenter(Context context) {
         this.authRepository = new AuthRepository(context);
         this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
     @Override
-    public void login(String email, String password) {
+    public void register(String fullName, String email, String password) {
         if (!isViewAttached()) return;
 
         // Clear previous errors
         getView().clearErrors();
 
         // Validate inputs
-        if (!validateInputs(email, password)) {
+        if (!validateInputs(fullName, email, password)) {
             return;
         }
 
         // Show loading
-        getView().showLoading("Logging in…");
+        getView().showLoading("Creating account…");
 
-        authRepository.login(email, password, new ResultCallback<User>() {
+        authRepository.register(fullName, email, password, new ResultCallback<User>() {
             @Override
             public void onSuccess(User user) {
                 mainHandler.post(() -> {
                     if (isViewAttached()) {
                         getView().hideLoading();
                         getView().showSuccessDialog(
-                                "Welcome back, " + user.getFirstName() + "!",
+                                "Welcome to MealMate, " + user.getFirstName() + "!",
                                 () -> getView().navigateToHome()
                         );
                     }
@@ -61,8 +61,17 @@ public class LoginPresenter extends BasePresenter<LoginContract.View> implements
         });
     }
 
-    private boolean validateInputs(String email, String password) {
+    private boolean validateInputs(String fullName, String email, String password) {
         boolean isValid = true;
+
+        // Validate name
+        if (fullName == null || fullName.trim().isEmpty()) {
+            getView().showNameError("Full name is required");
+            isValid = false;
+        } else if (fullName.trim().length() < 2) {
+            getView().showNameError("Name must be at least 2 characters");
+            isValid = false;
+        }
 
         // Validate email
         if (email == null || email.trim().isEmpty()) {
@@ -86,8 +95,28 @@ public class LoginPresenter extends BasePresenter<LoginContract.View> implements
     }
 
     @Override
-    public boolean isLoggedIn() {
-        return authRepository.isSessionLoggedIn();
+    public void checkEmailExists(String email) {
+        if (!isViewAttached()) return;
+
+        if (email == null || email.trim().isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            return;
+        }
+
+        authRepository.isEmailExists(email, new ResultCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean exists) {
+                mainHandler.post(() -> {
+                    if (isViewAttached() && exists) {
+                        getView().showEmailError("This email is already registered");
+                    }
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                // Ignore
+            }
+        });
     }
 
     @Override

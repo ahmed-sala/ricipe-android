@@ -1,6 +1,6 @@
-package com.example.recipe_android_project.features.onboarding.contract;
+package com.example.recipe_android_project.features.onboarding.presentation.contract;
 
-import com.example.recipe_android_project.features.onboarding.model.OnboardingItem;
+import com.example.recipe_android_project.features.onboarding.domain.model.OnboardingItem;
 
 import java.util.List;
 public interface OnboardingContract {

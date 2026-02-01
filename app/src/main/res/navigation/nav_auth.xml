@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/authDecisionFragment"
-        android:name="com.example.recipe_android_project.features.auth.view.AuthDecisionFragment"
+        android:name="com.example.recipe_android_project.features.auth.presentation.view.AuthDecisionFragment"
         android:label="fragment_auth_decision"
         tools:layout="@layout/fragment_auth_decision" >
         <action
@@ -27,7 +27,7 @@
     </fragment>
     <fragment
         android:id="@+id/loginFragment"
-        android:name="com.example.recipe_android_project.features.auth.view.LoginFragment"
+        android:name="com.example.recipe_android_project.features.auth.presentation.view.LoginFragment"
         android:label="fragment_login"
         tools:layout="@layout/fragment_login" >
         <action
@@ -40,7 +40,7 @@
     </fragment>
     <fragment
         android:id="@+id/registerFragment"
-        android:name="com.example.recipe_android_project.features.auth.view.RegisterFragment"
+        android:name="com.example.recipe_android_project.features.auth.presentation.view.RegisterFragment"
         android:label="fragment_register"
         tools:layout="@layout/fragment_register" >
         <action

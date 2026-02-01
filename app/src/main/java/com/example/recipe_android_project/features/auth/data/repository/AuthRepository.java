@@ -13,7 +13,7 @@ import com.example.recipe_android_project.features.auth.data.datasource.local.Au
 import com.example.recipe_android_project.features.auth.data.datasource.remote.AuthRemoteDatasource;
 import com.example.recipe_android_project.features.auth.data.entities.UserEntity;
 import com.example.recipe_android_project.features.auth.data.mapper.UserMapper;
-import com.example.recipe_android_project.features.auth.model.User;
+import com.example.recipe_android_project.features.auth.domain.model.User;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;

@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.auth.view;
+package com.example.recipe_android_project.features.auth.presentation.view;
 
 import android.os.Bundle;
 

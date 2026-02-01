@@ -1,6 +1,4 @@
-package com.example.recipe_android_project.features.auth.contract;
-
-import com.example.recipe_android_project.features.auth.model.User;
+package com.example.recipe_android_project.features.auth.presentation.contract;
 
 public interface LoginContract {
 

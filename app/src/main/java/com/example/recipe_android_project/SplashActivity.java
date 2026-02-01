@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.splashscreen.SplashScreen;
 
 import com.airbnb.lottie.LottieAnimationView;
-import com.example.recipe_android_project.features.onboarding.view.OnboardingActivity;
+import com.example.recipe_android_project.features.onboarding.presentation.view.OnboardingActivity;
 
 @SuppressLint("CustomSplashScreen")
 public class SplashActivity extends AppCompatActivity {

@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.onboarding.view;
+package com.example.recipe_android_project.features.onboarding.presentation.view;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -13,13 +13,12 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.core.helper.SharedPreferencesManager;
-import com.example.recipe_android_project.features.auth.view.AuthActivity;
-import com.example.recipe_android_project.features.onboarding.adapter.OnboardingAdapter;
-import com.example.recipe_android_project.features.onboarding.contract.OnboardingContract;
+import com.example.recipe_android_project.features.auth.presentation.view.AuthActivity;
+import com.example.recipe_android_project.features.onboarding.presentation.contract.OnboardingContract;
 import com.example.recipe_android_project.features.onboarding.data.local.OnboardingLocalDataSource;
 import com.example.recipe_android_project.features.onboarding.data.repository.OnboardingRepository;
-import com.example.recipe_android_project.features.onboarding.model.OnboardingItem;
-import com.example.recipe_android_project.features.onboarding.presnter.OnboardingPresenter;
+import com.example.recipe_android_project.features.onboarding.domain.model.OnboardingItem;
+import com.example.recipe_android_project.features.onboarding.presentation.presnter.OnboardingPresenter;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.List;
