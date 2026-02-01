@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.home.data.remote.dto.category;
+package com.example.recipe_android_project.features.home.data.dto.category;
 
 import androidx.annotation.Nullable;
 

@@ -1,7 +1,6 @@
 package com.example.recipe_android_project.features.auth.data.repository;
 
 import android.content.Context;
-import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Transformations;
@@ -33,7 +32,6 @@ public class AuthRepository {
         this.executorService = Executors.newSingleThreadExecutor();
     }
 
-    // ==================== REGISTER ====================
 
     public void register(String fullName, String email, String password, ResultCallback<User> callback) {
         executorService.execute(() -> {
@@ -44,7 +42,6 @@ public class AuthRepository {
                     entity = registerWithFirebaseSync(fullName, email, password);
                 } else {
                     entity = localDatasource.registerUser(fullName, email, password);
-                    Log.d(TAG, "Registered offline - will sync when online");
                 }
 
                 User user = UserMapper.toDomain(entity);
@@ -74,14 +71,12 @@ public class AuthRepository {
         try {
             localDatasource.registerUser(fullName, email, password);
         } catch (Exception e) {
-            Log.w(TAG, "Local registration failed but Firebase succeeded: " + e.getMessage());
         }
 
         firebaseUser.setPassword(null);
         return firebaseUser;
     }
 
-    // ==================== LOGIN ====================
 
     public void login(String email, String password, ResultCallback<User> callback) {
         executorService.execute(() -> {
@@ -92,7 +87,6 @@ public class AuthRepository {
                     entity = loginWithFirebaseSync(email, password);
                 } else {
                     entity = localDatasource.login(email, password);
-                    Log.d(TAG, "Logged in offline");
                 }
 
                 User user = UserMapper.toDomain(entity);
@@ -111,7 +105,6 @@ public class AuthRepository {
         try {
             firebaseUser = firebaseDatasource.login(email, password);
         } catch (Exception e) {
-            Log.d(TAG, "Firebase login failed: " + e.getMessage());
         }
 
         if (firebaseUser != null) {
@@ -130,9 +123,7 @@ public class AuthRepository {
                 localUser = localDatasource.login(email, password);
                 try {
                     createFirebaseUserFromLocal(localUser, password);
-                    Log.d(TAG, "Created Firebase user from local");
                 } catch (Exception e) {
-                    Log.w(TAG, "Failed to create Firebase user: " + e.getMessage());
                 }
                 localUser.setPassword(null);
                 return localUser;
@@ -149,7 +140,6 @@ public class AuthRepository {
             }
             firebaseDatasource.saveUserToFirestore(localUser);
         } catch (Exception e) {
-            Log.w(TAG, "Sync failed: " + e.getMessage());
         }
     }
 
@@ -174,11 +164,9 @@ public class AuthRepository {
         try {
             firebaseDatasource.createUserInFirebase(localUser, password);
         } catch (Exception e) {
-            Log.w(TAG, "Could not create Firebase user: " + e.getMessage());
         }
     }
 
-    // ==================== LOGOUT ====================
 
     public void logout(ResultCallback<Boolean> callback) {
         executorService.execute(() -> {
@@ -212,7 +200,6 @@ public class AuthRepository {
         });
     }
 
-    // ==================== SESSION METHODS ====================
 
     public String getSessionUserId() {
         return localDatasource.getSessionUserId();
@@ -230,7 +217,6 @@ public class AuthRepository {
         return localDatasource.isSessionLoggedIn();
     }
 
-    // ==================== CURRENT USER ====================
 
     public void getCurrentUser(ResultCallback<User> callback) {
         executorService.execute(() -> {
@@ -262,7 +248,6 @@ public class AuthRepository {
         });
     }
 
-    // ==================== USER OPERATIONS ====================
 
     public void getUserById(String userId, ResultCallback<User> callback) {
         executorService.execute(() -> {
@@ -302,7 +287,6 @@ public class AuthRepository {
         );
     }
 
-    // ==================== VALIDATION ====================
 
     public void isEmailExists(String email, ResultCallback<Boolean> callback) {
         executorService.execute(() -> {
@@ -326,7 +310,6 @@ public class AuthRepository {
         });
     }
 
-    // ==================== UPDATE OPERATIONS ====================
 
     public void updateUser(User user, ResultCallback<Boolean> callback) {
         executorService.execute(() -> {
@@ -338,7 +321,6 @@ public class AuthRepository {
                     try {
                         firebaseDatasource.saveUserToFirestore(entity);
                     } catch (Exception e) {
-                        Log.w(TAG, "Failed to sync update to Firebase: " + e.getMessage());
                     }
                 }
 
@@ -362,7 +344,6 @@ public class AuthRepository {
                             firebaseDatasource.saveUserToFirestore(user);
                         }
                     } catch (Exception e) {
-                        Log.w(TAG, "Failed to sync name update to Firebase: " + e.getMessage());
                     }
                 }
 
@@ -384,7 +365,6 @@ public class AuthRepository {
         });
     }
 
-    // ==================== DELETE OPERATIONS ====================
 
     public void deleteUser(String userId, ResultCallback<Boolean> callback) {
         executorService.execute(() -> {
@@ -420,7 +400,6 @@ public class AuthRepository {
         });
     }
 
-    // ==================== SHUTDOWN ====================
 
     public void shutdown() {
         if (executorService != null && !executorService.isShutdown()) {
