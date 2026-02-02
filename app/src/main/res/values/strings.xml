@@ -46,4 +46,13 @@
     <string name="favourites">Favourites</string>
     <string name="search">Search</string>
     <string name="home">Home</string>
+    <string name="what_do_you_want_to_cook_today">What do you want to cook today?</string>
+    <string name="meal_of_the_day">Meal of the Day</string>
+    <string name="view_all">View All</string>
+    <string name="suggested_meals">Suggested Meals</string>
+    <string name="categories">Categories</string>
+    <string name="hello_chef">Hello, Chef! 👋</string>
+    <string name="spaghetti_carbonara">Spaghetti Carbonara</string>
+    <string name="breakfast">Breakfast</string>
+    <string name="pasta">Pasta</string>
 </resources>

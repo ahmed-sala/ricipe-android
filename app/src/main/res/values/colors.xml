@@ -30,5 +30,11 @@
     <!-- UI -->
     <color name="divider">#E6E6E6</color>
     <color name="overlay">#80000000</color>
+    <color name="dark_black">#1A1A1A</color>
+    <color name="ripple_color">#44FFFFFF</color>
+    <color name="card_back_color">#2D2D2D</color>
+    <color name="grey_color">#888888</color>
+    <color name="primary_ripple">#22FF7A1A</color>
+    <color name="favourite_ripple">#33FF7A1A</color>
 
 </resources>

@@ -6,4 +6,8 @@
         <item name="android:width">64dp</item>
         <item name="android:height">32dp</item>
     </style>
+    <style name="ShapeAppearanceOverlay.App.RoundedImage" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
 </resources>
