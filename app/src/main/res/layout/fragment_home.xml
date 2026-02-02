@@ -101,8 +101,6 @@
                 android:textColor="#1A1A1A"
                 android:textSize="18sp"
                 android:textStyle="bold" />
-
-
         </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
@@ -128,7 +126,17 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="centerCrop"
-                    android:src="@drawable/onboarding_1" />
+                    android:background="@color/white" />
+
+                <!-- ✅ ADDED: Lottie loader for featured image -->
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/lottieFeaturedLoading"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="visible"
+                    app:lottie_autoPlay="true"
+                    app:lottie_loop="true"
+                    app:lottie_rawRes="@raw/loading_anim" />
 
                 <View
                     android:layout_width="match_parent"
@@ -173,8 +181,8 @@
                         android:background="@drawable/bg_tag_country_orange"
                         android:paddingHorizontal="14dp"
                         android:paddingVertical="6dp"
-                        android:text="ITALY"
-                        android:textAllCaps="true"
+                        android:text=""
+                        android:visibility="gone"                        android:textAllCaps="true"
                         android:textColor="@color/white"
                         android:textSize="11sp"
                         android:fontFamily="sans-serif-medium"
@@ -186,7 +194,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:fontFamily="sans-serif-medium"
-                        android:text="@string/spaghetti_carbonara"
+                        android:text=""
+                        android:visibility="gone"
                         android:textColor="@color/white"
                         android:textSize="22sp"
                         android:textStyle="bold" />
@@ -219,9 +228,17 @@
                 android:textColor="@color/dark_black"
                 android:textSize="18sp"
                 android:textStyle="bold" />
-
-
         </LinearLayout>
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottieScreenLoading"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:background="#80FFFFFF"
+            app:lottie_autoPlay="false"
+            app:lottie_loop="true"
+            app:lottie_rawRes="@raw/loading_anim" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvCategories"
@@ -252,8 +269,6 @@
                 android:textColor="@color/dark_black"
                 android:textSize="18sp"
                 android:textStyle="bold" />
-
-
         </LinearLayout>
 
     </LinearLayout>
