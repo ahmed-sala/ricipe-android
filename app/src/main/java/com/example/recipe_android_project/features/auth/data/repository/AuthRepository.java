@@ -406,4 +406,7 @@ public class AuthRepository {
             executorService.shutdown();
         }
     }
+    public boolean isUserLoggedIn() {
+        return localDatasource.isUserLoggedIn();
+    }
 }

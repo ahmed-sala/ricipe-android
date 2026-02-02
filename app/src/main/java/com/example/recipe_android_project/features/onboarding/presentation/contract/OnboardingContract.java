@@ -12,6 +12,7 @@ public interface OnboardingContract {
         void showGetStartedButton();
         void navigateToNextPage();
         void navigateToMain();
+        void navigateToHome();
     }
 
     interface Presenter {
@@ -23,5 +24,6 @@ public interface OnboardingContract {
         int getTotalPages();
         boolean isOnboardingCompleted();
         void onDestroy();
+        boolean isLoggedIn();
     }
 }
