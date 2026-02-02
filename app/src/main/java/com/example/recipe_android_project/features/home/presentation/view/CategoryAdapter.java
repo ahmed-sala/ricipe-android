@@ -25,9 +25,9 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.VH> {
     private OnCategoryClickListener listener;
 
     // Colors
-    private static final int COLOR_PRIMARY = R.color.primary;
-    private static final int COLOR_WHITE = R.color.white;
-    private static final int COLOR_TEXT_DARK = R.color.dark_black;
+    private static final int COLOR_PRIMARY = 0xFFFF7A1A;       // Orange primary
+    private static final int COLOR_WHITE = 0xFFFFFFFF;         // White
+    private static final int COLOR_TEXT_DARK = 0xFF1A1A1A;     // Dark text
 
     public interface OnCategoryClickListener {
         void onCategoryClick(CategoryItem item, int position);
@@ -58,24 +58,26 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.VH> {
 
         boolean isSelected = position == selectedIndex;
 
+        // Apply selected/unselected styles
         if (isSelected) {
+            // Selected state - Primary background
             holder.container.setBackgroundResource(R.drawable.bg_category_selected);
             holder.iconContainer.setBackgroundResource(R.drawable.bg_icon_circle_selected);
             holder.img.setImageTintList(ColorStateList.valueOf(COLOR_PRIMARY));
             holder.tv.setTextColor(COLOR_WHITE);
 
+            // Add subtle elevation for selected
             holder.itemView.setElevation(8f);
         } else {
+            // Unselected state - White background
             holder.container.setBackgroundResource(R.drawable.bg_category_unselected);
             holder.iconContainer.setBackgroundResource(R.drawable.bg_icon_circle_unselected);
             holder.img.setImageTintList(ColorStateList.valueOf(COLOR_PRIMARY));
             holder.tv.setTextColor(COLOR_TEXT_DARK);
 
-            holder.itemView.animate()
-                    .scaleX(isSelected ? 1.05f : 1f)
-                    .scaleY(isSelected ? 1.05f : 1f)
-                    .setDuration(200)
-                    .start();        }
+            // No elevation for unselected
+            holder.itemView.setElevation(0f);
+        }
 
         holder.itemView.setOnClickListener(v -> {
             int oldIndex = selectedIndex;

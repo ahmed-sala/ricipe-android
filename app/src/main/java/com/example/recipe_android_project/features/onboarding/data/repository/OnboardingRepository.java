@@ -49,4 +49,7 @@ public class OnboardingRepository {
     public boolean isOnboardingCompleted() {
         return localDataSource.isOnboardingCompleted();
     }
+    public boolean isLoggedIn() {
+        return localDataSource.isLoggedIn();
+    }
 }

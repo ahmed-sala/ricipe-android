@@ -14,6 +14,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.core.helper.SharedPreferencesManager;
 import com.example.recipe_android_project.features.auth.presentation.view.AuthActivity;
+import com.example.recipe_android_project.features.dashboard.view.DashboardActivity;
 import com.example.recipe_android_project.features.onboarding.presentation.contract.OnboardingContract;
 import com.example.recipe_android_project.features.onboarding.data.local.OnboardingLocalDataSource;
 import com.example.recipe_android_project.features.onboarding.data.repository.OnboardingRepository;
@@ -40,7 +41,11 @@ public class OnboardingActivity extends AppCompatActivity implements OnboardingC
         initPresenter();
 
         if (presenter.isOnboardingCompleted()) {
-            navigateToMain();
+            if(presenter.isLoggedIn()){
+                navigateToHome();
+            }else{
+                navigateToMain();
+            }
             return;
         }
 
@@ -179,6 +184,15 @@ public class OnboardingActivity extends AppCompatActivity implements OnboardingC
     @Override
     public void navigateToMain() {
         Intent intent = new Intent(this, AuthActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        startActivity(intent);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        finish();
+    }
+
+    @Override
+    public void navigateToHome() {
+        Intent intent = new Intent(this, DashboardActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
         startActivity(intent);
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);

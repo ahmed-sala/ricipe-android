@@ -80,4 +80,9 @@ public class OnboardingPresenter implements OnboardingContract.Presenter {
     public void onDestroy() {
         view = null;
     }
+
+    @Override
+    public boolean isLoggedIn() {
+        return repository.isLoggedIn();
+    }
 }

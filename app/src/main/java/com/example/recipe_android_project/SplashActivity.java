@@ -20,23 +20,18 @@ public class SplashActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Install splash screen - MUST be before super.onCreate()
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
 
         super.onCreate(savedInstanceState);
 
-        // Immediately dismiss system splash to show our custom one
         splashScreen.setKeepOnScreenCondition(() -> false);
 
-        // Make fullscreen
         makeFullScreen();
 
         setContentView(R.layout.activity_splash);
 
-        // Initialize views
         initViews();
 
-        // Setup animation listener
         setupAnimationListener();
     }
 
@@ -46,7 +41,6 @@ public class SplashActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
         );
 
-        // Hide system UI
         View decorView = getWindow().getDecorView();
         decorView.setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -62,24 +56,21 @@ public class SplashActivity extends AppCompatActivity {
         lottieAnimationView.addAnimatorListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
-                // Animation started
+
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                // Animation finished - navigate to main
                 navigateToMain();
             }
 
             @Override
             public void onAnimationCancel(Animator animation) {
-                // Animation cancelled - still navigate
                 navigateToMain();
             }
 
             @Override
             public void onAnimationRepeat(Animator animation) {
-                // Not used since loop is false
             }
         });
     }
@@ -87,11 +78,9 @@ public class SplashActivity extends AppCompatActivity {
     private void navigateToMain() {
         Intent intent = new Intent(SplashActivity.this, OnboardingActivity.class);
 
-        // Prevent lag by starting activity before animation ends visually
         intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
         startActivity(intent);
 
-        // Use fade transition
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
 
         finish();
