@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.util.Patterns;
 
 import com.example.recipe_android_project.core.config.ResultCallback;
+import com.example.recipe_android_project.core.helper.BasePresenter;
 import com.example.recipe_android_project.features.auth.presentation.contract.RegisterContract;
 import com.example.recipe_android_project.features.auth.data.repository.AuthRepository;
 import com.example.recipe_android_project.features.auth.domain.model.User;

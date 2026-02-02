@@ -1,5 +1,6 @@
 package com.example.recipe_android_project.features.home.presentation.view;
 
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,98 +8,116 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.airbnb.lottie.LottieAnimationView;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.example.recipe_android_project.R;
-import com.example.recipe_android_project.features.home.model.test.MealItem;
+import com.example.recipe_android_project.features.home.model.Meal;
 import com.google.android.material.card.MaterialCardView;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class MealAdapter extends RecyclerView.Adapter<MealAdapter.MealViewHolder> {
-
-    private final List<MealItem> items;
-    private final Set<Integer> favoritePositions = new HashSet<>();
-    private OnMealClickListener listener;
+public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
 
     public interface OnMealClickListener {
-        void onMealClick(MealItem meal, int position);
-        void onFavoriteClick(MealItem meal, int position, boolean isFavorite);
+        void onMealClick(Meal meal, int position);
+        void onFavoriteClick(Meal meal, int position, boolean isFavorite);
     }
 
-    public MealAdapter(List<MealItem> items) {
-        this.items = items;
-    }
+    private List<Meal> items;
+    private final Set<Integer> favoritePositions = new HashSet<>();
+    private final OnMealClickListener listener;
 
-    public MealAdapter(List<MealItem> items, OnMealClickListener listener) {
+    public MealAdapter(List<Meal> items, OnMealClickListener listener) {
         this.items = items;
         this.listener = listener;
     }
 
+    public void setItems(List<Meal> items) {
+        this.items = items;
+        favoritePositions.clear();
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
-    public MealViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_meal, parent, false);
-        return new MealViewHolder(view);
+        return new VH(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull MealViewHolder holder, int position) {
-        MealItem meal = items.get(position);
+    public void onBindViewHolder(@NonNull VH holder, int position) {
+        Meal meal = items.get(position);
 
-        holder.tvTitle.setText(meal.title);
-        holder.tvCountry.setText(meal.country + " Cuisine");
-        holder.tvCategory.setText(meal.category.toUpperCase());
-        holder.imgMeal.setImageResource(meal.imageRes);
+        holder.tvTitle.setText(meal.getName());
+        holder.tvCategory.setText(meal.getCategory() != null ? meal.getCategory().toUpperCase() : "");
+
+        holder.imgLoader.setVisibility(View.VISIBLE);
+        holder.imgLoader.playAnimation();
+
+        Glide.with(holder.itemView.getContext())
+                .load(meal.getThumbnailUrl())
+                .centerCrop()
+                .error(R.drawable.ic_error)
+                .listener(new RequestListener<Drawable>() {
+                    @Override
+                    public boolean onLoadFailed(@Nullable GlideException e,
+                                                Object model,
+                                                Target<Drawable> target,
+                                                boolean isFirstResource) {
+                        holder.imgLoader.cancelAnimation();
+                        holder.imgLoader.setVisibility(View.GONE);
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(Drawable resource,
+                                                   Object model,
+                                                   Target<Drawable> target,
+                                                   DataSource dataSource,
+                                                   boolean isFirstResource) {
+                        holder.imgLoader.cancelAnimation();
+                        holder.imgLoader.setVisibility(View.GONE);
+                        return false;
+                    }
+                })
+                .into(holder.imgMeal);
 
         boolean isFavorite = favoritePositions.contains(position);
         updateFavoriteIcon(holder, isFavorite);
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onMealClick(meal, position);
-            }
+            if (listener != null) listener.onMealClick(meal, position);
         });
 
-        holder.btnView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onMealClick(meal, position);
-            }
-        });
+
 
         holder.btnFavorite.setOnClickListener(v -> {
-            boolean newFavoriteState;
+            boolean newState;
             if (favoritePositions.contains(position)) {
                 favoritePositions.remove(position);
-                newFavoriteState = false;
+                newState = false;
             } else {
                 favoritePositions.add(position);
-                newFavoriteState = true;
+                newState = true;
             }
-            updateFavoriteIcon(holder, newFavoriteState);
+            updateFavoriteIcon(holder, newState);
 
-            holder.btnFavorite.animate()
-                    .scaleX(0.8f)
-                    .scaleY(0.8f)
-                    .setDuration(100)
-                    .withEndAction(() ->
-                            holder.btnFavorite.animate()
-                                    .scaleX(1f)
-                                    .scaleY(1f)
-                                    .setDuration(100)
-                                    .start()
-                    ).start();
-
-            if (listener != null) {
-                listener.onFavoriteClick(meal, position, newFavoriteState);
-            }
+            if (listener != null) listener.onFavoriteClick(meal, position, newState);
         });
     }
 
-    private void updateFavoriteIcon(MealViewHolder holder, boolean isFavorite) {
+    private void updateFavoriteIcon(VH holder, boolean isFavorite) {
         if (isFavorite) {
             holder.icFavorite.setImageResource(R.drawable.favorite_icon);
             holder.btnFavorite.setCardBackgroundColor(0xFFFF7A1A);
@@ -112,23 +131,32 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.MealViewHolder
 
     @Override
     public int getItemCount() {
-        return items.size();
+        return items != null ? items.size() : 0;
     }
 
-    static class MealViewHolder extends RecyclerView.ViewHolder {
-        ImageView imgMeal, icFavorite;
-        TextView tvTitle, tvCountry, tvCategory;
-        MaterialCardView btnFavorite, btnView;
+    @Override
+    public void onViewRecycled(@NonNull VH holder) {
+        super.onViewRecycled(holder);
+        holder.imgLoader.cancelAnimation();
+        holder.imgLoader.setVisibility(View.GONE);
+        Glide.with(holder.itemView.getContext()).clear(holder.imgMeal);
+    }
 
-        MealViewHolder(@NonNull View itemView) {
+    static class VH extends RecyclerView.ViewHolder {
+        ImageView imgMeal, icFavorite;
+        TextView tvTitle,  tvCategory;
+        MaterialCardView btnFavorite;
+        LottieAnimationView imgLoader;
+
+        VH(@NonNull View itemView) {
             super(itemView);
             imgMeal = itemView.findViewById(R.id.imgMeal);
             tvTitle = itemView.findViewById(R.id.tvMealTitle);
-            tvCountry = itemView.findViewById(R.id.tvMealCountry);
             tvCategory = itemView.findViewById(R.id.tvMealCategory);
             btnFavorite = itemView.findViewById(R.id.btnFavorite);
-            btnView = itemView.findViewById(R.id.btnView);
+
             icFavorite = itemView.findViewById(R.id.icFavorite);
+            imgLoader = itemView.findViewById(R.id.lottieImgLoading);
         }
     }
 }
