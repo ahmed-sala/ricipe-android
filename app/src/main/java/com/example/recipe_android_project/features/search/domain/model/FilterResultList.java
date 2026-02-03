@@ -14,7 +14,6 @@ public class FilterResultList implements Serializable {
         this.meals = new ArrayList<>();
     }
 
-    // ==================== HELPER METHODS ====================
 
     public int size() {
         return meals != null ? meals.size() : 0;
@@ -28,7 +27,6 @@ public class FilterResultList implements Serializable {
         return !isEmpty();
     }
 
-    // ==================== GETTERS & SETTERS ====================
 
     public List<FilterResult> getMeals() {
         return meals;

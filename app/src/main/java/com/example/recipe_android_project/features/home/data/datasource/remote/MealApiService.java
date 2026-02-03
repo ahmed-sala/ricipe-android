@@ -16,8 +16,7 @@ public interface MealApiService {
     Call<MealResponseDto> getMealById(@Query("i") String id);
     @GET("categories.php")
     Call<CategoryResponseDto> getCategories();
-    @GET("list.php")
-    Call<AreaResponseDto> getAreas(@Query("a") String list);
+
     @GET("list.php")
     Call<CategoryResponseDto> getCategoryList(@Query("l") String list);
     @GET("search.php")

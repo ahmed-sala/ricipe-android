@@ -15,7 +15,6 @@ public class Ingredient implements Serializable {
     public Ingredient() {
     }
 
-    // ==================== HELPER METHODS ====================
 
     public boolean isValid() {
         return name != null && !name.trim().isEmpty();
@@ -33,7 +32,6 @@ public class Ingredient implements Serializable {
         return type != null && !type.trim().isEmpty();
     }
 
-    // ==================== GETTERS & SETTERS ====================
 
     public int getId() {
         return id;
@@ -75,7 +73,6 @@ public class Ingredient implements Serializable {
         this.type = type;
     }
 
-    // ==================== OVERRIDES ====================
 
     @Override
     public boolean equals(Object o) {

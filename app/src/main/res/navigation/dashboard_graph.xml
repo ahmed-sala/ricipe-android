@@ -13,7 +13,7 @@
 
     <fragment
         android:id="@+id/searchFragment"
-        android:name="com.example.recipe_android_project.features.search.view.SearchFragment"
+        android:name="com.example.recipe_android_project.features.search.presentation.view.SearchFragment"
         android:label="Search"
         tools:layout="@layout/fragment_search" />
 

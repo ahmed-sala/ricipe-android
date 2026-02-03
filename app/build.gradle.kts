@@ -53,6 +53,9 @@ dependencies {
     implementation(libs.navigation.ui)
     implementation(libs.okhttp)
     implementation(libs.logging.interceptor)
+    implementation(libs.rxjava)
+    implementation(libs.rxandroid)
+    implementation(libs.adapter.rxjava3)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)

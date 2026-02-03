@@ -13,7 +13,6 @@ public class FilterResult implements Serializable {
     public FilterResult() {
     }
 
-    // ==================== HELPER METHODS ====================
 
     public boolean isValid() {
         return id > 0 && name != null && !name.trim().isEmpty();
@@ -23,7 +22,6 @@ public class FilterResult implements Serializable {
         return thumbnailUrl != null && !thumbnailUrl.trim().isEmpty();
     }
 
-    // ==================== GETTERS & SETTERS ====================
 
     public int getId() {
         return id;
@@ -49,7 +47,6 @@ public class FilterResult implements Serializable {
         this.thumbnailUrl = thumbnailUrl;
     }
 
-    // ==================== OVERRIDES ====================
 
     @Override
     public boolean equals(Object o) {

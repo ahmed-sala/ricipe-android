@@ -10,6 +10,7 @@
     <color name="splash_background">#FFFFFF</color>
     <color name="background_card">#322820</color>
     <color name="field_background">#F5F5F5</color>
+    <color name="text_highlight">#4DE27036</color>
 
     <!-- Text -->
     <color name="text_primary">#1C1C1E</color>

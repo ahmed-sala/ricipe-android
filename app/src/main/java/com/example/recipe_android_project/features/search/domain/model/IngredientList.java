@@ -14,7 +14,6 @@ public class IngredientList implements Serializable {
         this.ingredients = new ArrayList<>();
     }
 
-    // ==================== HELPER METHODS ====================
 
     public int size() {
         return ingredients != null ? ingredients.size() : 0;
@@ -28,7 +27,6 @@ public class IngredientList implements Serializable {
         return !isEmpty();
     }
 
-    // ==================== GETTERS & SETTERS ====================
 
     public List<Ingredient> getIngredients() {
         return ingredients;

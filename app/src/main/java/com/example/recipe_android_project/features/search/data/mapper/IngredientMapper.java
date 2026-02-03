@@ -17,7 +17,6 @@ public final class IngredientMapper {
     private IngredientMapper() {
     }
 
-    // ==================== DTO -> DOMAIN ====================
 
     @Nullable
     public static Ingredient toDomain(@Nullable IngredientDto dto) {
@@ -61,7 +60,6 @@ public final class IngredientMapper {
         return toDomain(dto).getIngredients();
     }
 
-    // ==================== DOMAIN -> DTO ====================
 
     @Nullable
     public static IngredientDto toDto(@Nullable Ingredient domain) {
@@ -97,7 +95,6 @@ public final class IngredientMapper {
         return responseDto;
     }
 
-    // ==================== HELPERS ====================
 
     private static int parseIdSafe(@Nullable String id) {
         String cleaned = cleanText(id);
