@@ -17,7 +17,6 @@ public final class FilterResultMapper {
     private FilterResultMapper() {
     }
 
-    // ==================== DTO -> DOMAIN ====================
 
     @Nullable
     public static FilterResult toDomain(@Nullable FilterResultDto dto) {
@@ -62,7 +61,6 @@ public final class FilterResultMapper {
         return toDomain(dto).getMeals();
     }
 
-    // ==================== DOMAIN -> DTO ====================
 
     @Nullable
     public static FilterResultDto toDto(@Nullable FilterResult domain) {
@@ -96,7 +94,6 @@ public final class FilterResultMapper {
         return responseDto;
     }
 
-    // ==================== HELPERS ====================
 
     private static int parseIdSafe(@Nullable String id) {
         String cleaned = cleanText(id);

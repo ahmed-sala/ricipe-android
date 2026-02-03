@@ -55,4 +55,7 @@
     <string name="spaghetti_carbonara">Spaghetti Carbonara</string>
     <string name="breakfast">Breakfast</string>
     <string name="pasta">Pasta</string>
+    <string name="type_to_start_searching_for_delicious_meals">Type to start searching for delicious meals</string>
+    <string name="search_for_meals">Search for meals</string>
+    <string name="search_ingredients_countries">Search ingredients, countries...</string>
 </resources>
