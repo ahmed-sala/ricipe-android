@@ -21,6 +21,11 @@
         <item name="android:textSize">14sp</item>
         <item name="android:fontFamily">sans-serif-medium</item>
     </style>
-
+    <style name="ToolbarTitleStyle">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/dark_black</item>
+        <item name="fontFamily">sans-serif-medium</item>
+    </style>
 
 </resources>

@@ -22,6 +22,7 @@ import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.listeners.OnMealClickListener;
 import com.example.recipe_android_project.features.home.model.Category;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.home.presentation.contract.HomeContract;
@@ -30,7 +31,7 @@ import com.example.recipe_android_project.features.home.presentation.presenter.H
 import java.util.ArrayList;
 import java.util.List;
 
-public class HomeFragment extends Fragment implements HomeContract.View {
+public class HomeFragment extends Fragment implements HomeContract.View, OnMealClickListener {
 
     private RecyclerView rvCategories, rvMeals;
 
@@ -90,16 +91,7 @@ public class HomeFragment extends Fragment implements HomeContract.View {
         rvMeals.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvMeals.setNestedScrollingEnabled(false);
 
-        mealAdapter = new MealAdapter(new ArrayList<>(), new MealAdapter.OnMealClickListener() {
-            @Override
-            public void onMealClick(Meal meal, int position) {
-            }
-
-            @Override
-            public void onFavoriteClick(Meal meal, int position, boolean isFavorite) {
-
-            }
-        });
+        mealAdapter = new MealAdapter(new ArrayList<>(), this);
 
         rvMeals.setAdapter(mealAdapter);
     }
@@ -218,4 +210,14 @@ public class HomeFragment extends Fragment implements HomeContract.View {
     }
     @Override
     public void hideMealOfDayLoading() { hideFeaturedLoading(); }
+
+    @Override
+    public void onMealClick(Meal meal, int position) {
+
+    }
+
+    @Override
+    public void onFavoriteClick(Meal meal, int position, boolean isFavorite) {
+
+    }
 }

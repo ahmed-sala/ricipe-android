@@ -18,6 +18,7 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.features.search.domain.model.Ingredient;
+import com.example.recipe_android_project.features.search.presentation.view.listeners.OnIngredientClickListener;
 import com.google.android.material.card.MaterialCardView;
 
 import java.util.List;
@@ -29,9 +30,7 @@ public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.In
     private List<Ingredient> items;
     private final OnIngredientClickListener listener;
 
-    public interface OnIngredientClickListener {
-        void onIngredientClick(Ingredient ingredient);
-    }
+
 
     public IngredientAdapter(List<Ingredient> items, OnIngredientClickListener listener) {
         this.items = items;

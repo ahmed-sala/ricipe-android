@@ -1,4 +1,4 @@
-package com.example.recipe_android_project.features.home.presentation.view;
+package com.example.recipe_android_project.features.search.presentation.view;
 
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
@@ -18,53 +18,82 @@ import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.example.recipe_android_project.R;
-import com.example.recipe_android_project.core.listeners.OnMealClickListener;
-import com.example.recipe_android_project.features.home.model.Meal;
+import com.example.recipe_android_project.features.search.domain.model.FilterResult;
 import com.google.android.material.card.MaterialCardView;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
+public class FilterResultAdapter extends RecyclerView.Adapter<FilterResultAdapter.VH> {
 
+    public interface OnFilterResultClickListener {
+        void onMealClick(FilterResult filterResult, int position);
+        void onFavoriteClick(FilterResult filterResult, int position, boolean isFavorite);
+    }
 
+    private List<FilterResult> items = new ArrayList<>();
+    private final Set<Integer> favoriteIds = new HashSet<>();
+    private final OnFilterResultClickListener listener;
+    private String filterTag = "";
 
-    private List<Meal> items;
-    private final Set<Integer> favoritePositions = new HashSet<>();
-    private final OnMealClickListener listener;
-
-    public MealAdapter(List<Meal> items, OnMealClickListener listener) {
-        this.items = items;
+    public FilterResultAdapter(OnFilterResultClickListener listener) {
         this.listener = listener;
     }
 
-    public void setItems(List<Meal> items) {
-        this.items = items;
-        favoritePositions.clear();
+    public void setItems(List<FilterResult> items) {
+        this.items = items != null ? items : new ArrayList<>();
         notifyDataSetChanged();
+    }
+
+    public void setFilterTag(String filterTag) {
+        this.filterTag = filterTag != null ? filterTag : "";
+    }
+
+    public void setFavoriteIds(Set<Integer> ids) {
+        favoriteIds.clear();
+        if (ids != null) {
+            favoriteIds.addAll(ids);
+        }
+        notifyDataSetChanged();
+    }
+
+    public void updateFavoriteStatus(int mealId, boolean isFavorite) {
+        if (isFavorite) {
+            favoriteIds.add(mealId);
+        } else {
+            favoriteIds.remove(mealId);
+        }
+
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).getId() == mealId) {
+                notifyItemChanged(i);
+                break;
+            }
+        }
     }
 
     @NonNull
     @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_meal, parent, false);
+                .inflate(R.layout.item_filter_meal, parent, false);
         return new VH(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull VH holder, int position) {
-        Meal meal = items.get(position);
+        FilterResult item = items.get(position);
 
-        holder.tvTitle.setText(meal.getName());
-        holder.tvCategory.setText(meal.getCategory() != null ? meal.getCategory().toUpperCase() : "");
+        holder.tvTitle.setText(item.getName());
+        holder.tvFilterTag.setText(filterTag.toUpperCase());
 
         holder.imgLoader.setVisibility(View.VISIBLE);
         holder.imgLoader.playAnimation();
 
         Glide.with(holder.itemView.getContext())
-                .load(meal.getThumbnailUrl())
+                .load(item.getThumbnailUrl())
                 .centerCrop()
                 .error(R.drawable.ic_error)
                 .listener(new RequestListener<Drawable>() {
@@ -91,27 +120,23 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
                 })
                 .into(holder.imgMeal);
 
-        boolean isFavorite = favoritePositions.contains(position);
+        boolean isFavorite = favoriteIds.contains(item.getId());
         updateFavoriteIcon(holder, isFavorite);
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onMealClick(meal, position);
+            if (listener != null) listener.onMealClick(item, position);
         });
 
-
-
         holder.btnFavorite.setOnClickListener(v -> {
-            boolean newState;
-            if (favoritePositions.contains(position)) {
-                favoritePositions.remove(position);
-                newState = false;
+            boolean newState = !favoriteIds.contains(item.getId());
+            if (newState) {
+                favoriteIds.add(item.getId());
             } else {
-                favoritePositions.add(position);
-                newState = true;
+                favoriteIds.remove(item.getId());
             }
             updateFavoriteIcon(holder, newState);
 
-            if (listener != null) listener.onFavoriteClick(meal, position, newState);
+            if (listener != null) listener.onFavoriteClick(item, position, newState);
         });
     }
 
@@ -129,7 +154,7 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
 
     @Override
     public int getItemCount() {
-        return items != null ? items.size() : 0;
+        return items.size();
     }
 
     @Override
@@ -142,7 +167,7 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
 
     static class VH extends RecyclerView.ViewHolder {
         ImageView imgMeal, icFavorite;
-        TextView tvTitle,  tvCategory;
+        TextView tvTitle, tvFilterTag;
         MaterialCardView btnFavorite;
         LottieAnimationView imgLoader;
 
@@ -150,9 +175,8 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
             super(itemView);
             imgMeal = itemView.findViewById(R.id.imgMeal);
             tvTitle = itemView.findViewById(R.id.tvMealTitle);
-            tvCategory = itemView.findViewById(R.id.tvMealCategory);
+            tvFilterTag = itemView.findViewById(R.id.tvFilterTag);
             btnFavorite = itemView.findViewById(R.id.btnFavorite);
-
             icFavorite = itemView.findViewById(R.id.icFavorite);
             imgLoader = itemView.findViewById(R.id.lottieImgLoading);
         }
