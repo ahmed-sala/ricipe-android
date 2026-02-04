@@ -17,6 +17,7 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.features.home.model.Area;
+import com.example.recipe_android_project.features.search.presentation.view.listeners.OnAreaClickListener;
 import com.google.android.material.card.MaterialCardView;
 
 import java.util.HashMap;
@@ -30,7 +31,6 @@ public class AreaAdapter extends RecyclerView.Adapter<AreaAdapter.AreaViewHolder
     private List<Area> items;
     private final OnAreaClickListener listener;
 
-    // Complete Country code mapping for flag images
     private static final Map<String, String> COUNTRY_CODES = new HashMap<>();
     static {
         COUNTRY_CODES.put("Algerian", "dz");
@@ -69,13 +69,11 @@ public class AreaAdapter extends RecyclerView.Adapter<AreaAdapter.AreaViewHolder
         COUNTRY_CODES.put("Ukrainian", "ua");
         COUNTRY_CODES.put("Uruguayan", "uy");
         COUNTRY_CODES.put("Venezuelan", "ve");
-        COUNTRY_CODES.put("Venezulan", "ve"); // Handle API typo
+        COUNTRY_CODES.put("Venezulan", "ve");
         COUNTRY_CODES.put("Vietnamese", "vn");
     }
 
-    public interface OnAreaClickListener {
-        void onAreaClick(Area area);
-    }
+
 
     public AreaAdapter(List<Area> items, OnAreaClickListener listener) {
         this.items = items;
@@ -123,12 +121,10 @@ public class AreaAdapter extends RecyclerView.Adapter<AreaAdapter.AreaViewHolder
         public void bind(Area item, OnAreaClickListener listener) {
             tvTitle.setText(item.getName());
 
-            // Show loading animation
             lottieLoadingThumb.setVisibility(View.VISIBLE);
             lottieLoadingThumb.playAnimation();
             imgItem.setVisibility(View.INVISIBLE);
 
-            // Get country code and build flag URL
             String countryCode = COUNTRY_CODES.get(item.getName());
             if (countryCode != null) {
                 String flagUrl = "https://flagcdn.com/w160/" + countryCode + ".png";

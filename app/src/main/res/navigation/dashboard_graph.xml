@@ -15,7 +15,28 @@
         android:id="@+id/searchFragment"
         android:name="com.example.recipe_android_project.features.search.presentation.view.SearchFragment"
         android:label="Search"
-        tools:layout="@layout/fragment_search" />
+        tools:layout="@layout/fragment_search">
+
+        <action
+            android:id="@+id/action_searchFragment_to_filterResultFragment"
+            app:destination="@id/filterResultFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/filterResultFragment"
+        android:name="com.example.recipe_android_project.features.search.presentation.view.FilterResultFragment"
+        android:label="Filter Results"
+        tools:layout="@layout/fragment_filter_result">
+
+        <!-- Safe Args argument with Serializable -->
+        <argument
+            android:name="filterParams"
+            app:argType="com.example.recipe_android_project.features.search.domain.model.FilterParams" />
+    </fragment>
 
     <fragment
         android:id="@+id/favouriteFragment"

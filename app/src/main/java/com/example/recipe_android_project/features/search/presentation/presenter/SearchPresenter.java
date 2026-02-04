@@ -4,6 +4,8 @@ import com.example.recipe_android_project.core.config.ResultCallback;
 import com.example.recipe_android_project.features.home.model.Area;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.search.data.repository.SearchRepository;
+import com.example.recipe_android_project.features.search.domain.model.FilterParams;
+import com.example.recipe_android_project.features.search.domain.model.FilterType;
 import com.example.recipe_android_project.features.search.domain.model.Ingredient;
 import com.example.recipe_android_project.features.search.presentation.contract.SearchContract;
 
@@ -36,8 +38,7 @@ public class SearchPresenter implements SearchContract.Presenter {
     private List<Ingredient> allIngredients;
     private List<Area> allAreas;
 
-    private boolean ingredientsLoaded = false;
-    private boolean areasLoaded = false;
+
 
     private static class SearchQuery {
         final String query;
@@ -200,7 +201,6 @@ public class SearchPresenter implements SearchContract.Presenter {
                 @Override
                 public void onSuccess(List<Ingredient> ingredients) {
                     allIngredients = ingredients;
-                    ingredientsLoaded = true;
 
                     if (!query.equals(currentQuery)) return;
 
@@ -249,7 +249,6 @@ public class SearchPresenter implements SearchContract.Presenter {
                 @Override
                 public void onSuccess(List<Area> areas) {
                     allAreas = areas;
-                    areasLoaded = true;
 
                     if (!query.equals(currentQuery)) return;
 
@@ -307,7 +306,6 @@ public class SearchPresenter implements SearchContract.Presenter {
             @Override
             public void onSuccess(List<Ingredient> ingredients) {
                 allIngredients = ingredients;
-                ingredientsLoaded = true;
 
                 if (view != null) {
                     view.hideLoading();
@@ -338,7 +336,6 @@ public class SearchPresenter implements SearchContract.Presenter {
             @Override
             public void onSuccess(List<Area> areas) {
                 allAreas = areas;
-                areasLoaded = true;
 
                 if (view != null) {
                     view.hideLoading();
@@ -366,10 +363,26 @@ public class SearchPresenter implements SearchContract.Presenter {
 
     @Override
     public void onIngredientClicked(Ingredient ingredient) {
+        if (view != null && ingredient != null) {
+            FilterParams params = new FilterParams(
+                    FilterType.INGREDIENT,
+                    ingredient.getName(),
+                    ingredient.getName() + " Recipes"
+            );
+            view.navigateToFilterResult(params);
+        }
     }
 
     @Override
     public void onAreaClicked(Area area) {
+        if (view != null && area != null) {
+            FilterParams params = new FilterParams(
+                    FilterType.AREA,
+                    area.getName(),
+                    area.getName() + " Cuisine"
+            );
+            view.navigateToFilterResult(params);
+        }
     }
 
     @Override

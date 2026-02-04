@@ -20,19 +20,25 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.airbnb.lottie.LottieAnimationView;
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.listeners.OnMealClickListener;
 import com.example.recipe_android_project.features.home.model.Area;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.home.presentation.view.MealAdapter;
 import com.example.recipe_android_project.features.search.data.repository.SearchRepository;
+import com.example.recipe_android_project.features.search.domain.model.FilterParams;
 import com.example.recipe_android_project.features.search.domain.model.Ingredient;
 import com.example.recipe_android_project.features.search.presentation.contract.SearchContract;
 import com.example.recipe_android_project.features.search.presentation.presenter.SearchPresenter;
+import com.example.recipe_android_project.features.search.presentation.view.listeners.OnAreaClickListener;
+import com.example.recipe_android_project.features.search.presentation.view.listeners.OnIngredientClickListener;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -42,7 +48,7 @@ import java.util.List;
 
 public class SearchFragment extends Fragment implements
         SearchContract.View,
-        MealAdapter.OnMealClickListener {
+        OnMealClickListener, OnAreaClickListener, OnIngredientClickListener {
 
     private static final int VOICE_SEARCH_REQUEST_CODE = 100;
 
@@ -56,7 +62,7 @@ public class SearchFragment extends Fragment implements
     private EditText etSearch;
     private ImageView icSearch;
     private ImageView icMicrophone;
-    private ImageView icClear;  // NEW: Clear button
+    private ImageView icClear;
 
     private ChipGroup chipGroup;
     private Chip chipMeals;
@@ -120,7 +126,7 @@ public class SearchFragment extends Fragment implements
         etSearch = view.findViewById(R.id.etSearch);
         icSearch = view.findViewById(R.id.icSearch);
         icMicrophone = view.findViewById(R.id.icMicrophone);
-        icClear = view.findViewById(R.id.icClear);  // NEW
+        icClear = view.findViewById(R.id.icClear);
 
         chipGroup = view.findViewById(R.id.chipGroup);
         chipMeals = view.findViewById(R.id.chipMeals);
@@ -181,7 +187,6 @@ public class SearchFragment extends Fragment implements
     }
 
     private void setupSearch() {
-        // Text change listener
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -189,7 +194,6 @@ public class SearchFragment extends Fragment implements
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // Toggle microphone/clear button based on text
                 updateSearchIcons(s != null && s.length() > 0);
             }
 
@@ -200,13 +204,10 @@ public class SearchFragment extends Fragment implements
             }
         });
 
-        // Microphone click - start voice search
         icMicrophone.setOnClickListener(v -> startVoiceSearch());
 
-        // Clear button click - clear the search field
         icClear.setOnClickListener(v -> clearSearch());
 
-        // Search icon click - trigger search
         icSearch.setOnClickListener(v -> {
             String query = etSearch.getText().toString().trim();
             if (!query.isEmpty()) {
@@ -214,7 +215,6 @@ public class SearchFragment extends Fragment implements
             }
         });
 
-        // Handle keyboard search action
         etSearch.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 String query = etSearch.getText().toString().trim();
@@ -227,36 +227,25 @@ public class SearchFragment extends Fragment implements
         });
     }
 
-    /**
-     * Toggle between microphone and clear icons
-     * @param hasText true if search field has text
-     */
+
     private void updateSearchIcons(boolean hasText) {
         if (hasText) {
-            // Show clear button, hide microphone
             icMicrophone.setVisibility(View.GONE);
             icClear.setVisibility(View.VISIBLE);
         } else {
-            // Show microphone, hide clear button
             icMicrophone.setVisibility(View.VISIBLE);
             icClear.setVisibility(View.GONE);
         }
     }
 
-    /**
-     * Clear the search field and reset state
-     */
+
     private void clearSearch() {
         etSearch.setText("");
         etSearch.clearFocus();
 
-        // Optional: Hide keyboard
-        // hideKeyboard();
+         hideKeyboard();
     }
 
-    /**
-     * Optional: Hide the soft keyboard
-     */
     private void hideKeyboard() {
         if (getActivity() != null) {
             android.view.inputmethod.InputMethodManager imm =
@@ -274,15 +263,14 @@ public class SearchFragment extends Fragment implements
         rvMeals.setAdapter(mealAdapter);
 
         rvIngredients.setLayoutManager(new GridLayoutManager(requireContext(), 2));
-        ingredientAdapter = new IngredientAdapter(ingredientsList, this::onIngredientClicked);
+        ingredientAdapter = new IngredientAdapter(ingredientsList, this);
         rvIngredients.setAdapter(ingredientAdapter);
 
         rvCountry.setLayoutManager(new GridLayoutManager(requireContext(), 2));
-        areaAdapter = new AreaAdapter(areasList, this::onAreaClicked);
+        areaAdapter = new AreaAdapter(areasList, this);
         rvCountry.setAdapter(areaAdapter);
     }
 
-    // ==================== SearchContract.View Implementation ====================
 
     @Override
     public void showLoading() {
@@ -365,10 +353,7 @@ public class SearchFragment extends Fragment implements
         searchPlaceholderContainer.setVisibility(View.GONE);
     }
 
-    @Override
-    public int getCurrentTab() {
-        return currentTab;
-    }
+
 
     private void showEmptyState(String title, String message) {
         if (emptyStateContainer != null) {
@@ -391,34 +376,31 @@ public class SearchFragment extends Fragment implements
         }
     }
 
-    // ==================== Click Listeners ====================
+    @Override
+    public void navigateToFilterResult(FilterParams filterParams) {
+        SearchFragmentDirections.ActionSearchFragmentToFilterResultFragment action =
+                SearchFragmentDirections.actionSearchFragmentToFilterResultFragment(filterParams);
+
+        NavController navController = Navigation.findNavController(requireView());
+        navController.navigate(action);
+    }
+
 
     @Override
     public void onMealClick(Meal meal, int position) {
         presenter.onMealClicked(meal);
-        Toast.makeText(requireContext(), "Meal: " + meal.getName(), Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onFavoriteClick(Meal meal, int position, boolean isFavorite) {
         if (isFavorite) {
-            Toast.makeText(requireContext(), meal.getName() + " added to favorites", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(requireContext(), meal.getName() + " removed from favorites", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void onIngredientClicked(Ingredient ingredient) {
-        presenter.onIngredientClicked(ingredient);
-        Toast.makeText(requireContext(), "Ingredient: " + ingredient.getName(), Toast.LENGTH_SHORT).show();
-    }
 
-    private void onAreaClicked(Area area) {
-        presenter.onAreaClicked(area);
-        Toast.makeText(requireContext(), "Country: " + area.getName(), Toast.LENGTH_SHORT).show();
-    }
 
-    // ==================== Voice Search ====================
+
 
     private void startVoiceSearch() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -427,7 +409,6 @@ public class SearchFragment extends Fragment implements
         try {
             startActivityForResult(intent, VOICE_SEARCH_REQUEST_CODE);
         } catch (Exception e) {
-            Toast.makeText(requireContext(), "Voice search not supported", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -440,17 +421,27 @@ public class SearchFragment extends Fragment implements
                 String voiceText = results.get(0);
                 etSearch.setText(voiceText);
                 etSearch.setSelection(voiceText.length());
-                // Icons will be updated automatically via TextWatcher
             }
         }
     }
 
-    // ==================== Lifecycle ====================
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         presenter.detachView();
         presenter.dispose();
+    }
+
+    @Override
+    public void onAreaClick(Area area) {
+        presenter.onAreaClicked(area);
+
+    }
+
+    @Override
+    public void onIngredientClick(Ingredient ingredient) {
+        presenter.onIngredientClicked(ingredient);
+
     }
 }

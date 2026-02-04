@@ -16,13 +16,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.RecipeAndroidProject">
         <activity
+            android:name=".features.search.presentation.view.FragmentFilterResultActivity"
+            android:exported="false" />
+        <activity
             android:name=".features.dashboard.view.DashboardActivity"
             android:exported="false">
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.MAIN" />-->
 
-<!--                <category android:name="android.intent.category.LAUNCHER" />-->
-<!--            </intent-filter>-->
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.intent.action.MAIN" /> -->
+
+
+            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+            <!-- </intent-filter> -->
         </activity>
         <activity
             android:name=".features.auth.presentation.view.AuthActivity"
