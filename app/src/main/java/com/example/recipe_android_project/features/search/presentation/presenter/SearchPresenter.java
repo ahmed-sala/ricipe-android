@@ -1,6 +1,5 @@
 package com.example.recipe_android_project.features.search.presentation.presenter;
 
-import com.example.recipe_android_project.core.config.ResultCallback;
 import com.example.recipe_android_project.features.home.model.Area;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.search.data.repository.SearchRepository;
@@ -9,13 +8,13 @@ import com.example.recipe_android_project.features.search.domain.model.FilterTyp
 import com.example.recipe_android_project.features.search.domain.model.Ingredient;
 import com.example.recipe_android_project.features.search.presentation.contract.SearchContract;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.PublishSubject;
 
 public class SearchPresenter implements SearchContract.Presenter {
@@ -30,45 +29,31 @@ public class SearchPresenter implements SearchContract.Presenter {
     private final SearchRepository repository;
     private final CompositeDisposable disposables = new CompositeDisposable();
 
-    private final PublishSubject<SearchQuery> searchSubject = PublishSubject.create();
+    private final PublishSubject<String> searchSubject = PublishSubject.create();
 
     private String currentQuery = "";
     private int currentTab = TAB_MEALS;
 
-    private List<Ingredient> allIngredients;
-    private List<Area> allAreas;
-
-
-
-    private static class SearchQuery {
-        final String query;
-        final long timestamp;
-
-        SearchQuery(String query) {
-            this.query = query;
-            this.timestamp = System.currentTimeMillis();
-        }
-    }
+    private Disposable currentSearchDisposable;
 
     public SearchPresenter(SearchRepository repository) {
         this.repository = repository;
         setupSearchDebounce();
     }
 
+
     private void setupSearchDebounce() {
         Disposable searchDisposable = searchSubject
                 .debounce(DEBOUNCE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .distinctUntilChanged()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        searchQuery -> performSearch(searchQuery.query),
-                        throwable -> {
-                            if (view != null) {
-                                view.showError(throwable.getMessage());
-                            }
-                        }
+                        this::performSearch,
+                        throwable -> handleError("Search error: " + throwable.getMessage())
                 );
         disposables.add(searchDisposable);
     }
+
 
     @Override
     public void attachView(SearchContract.View view) {
@@ -80,6 +65,7 @@ public class SearchPresenter implements SearchContract.Presenter {
         this.view = null;
     }
 
+
     @Override
     public void onSearchQueryChanged(String query) {
         currentQuery = query != null ? query.trim() : "";
@@ -87,6 +73,7 @@ public class SearchPresenter implements SearchContract.Presenter {
         if (view == null) return;
 
         if (currentQuery.isEmpty()) {
+            cancelCurrentSearch();
             view.hideLoading();
             view.hideEmptyState();
             resetToInitialState();
@@ -96,9 +83,8 @@ public class SearchPresenter implements SearchContract.Presenter {
         view.hideSearchPlaceholder();
         view.showLoading();
 
-        searchSubject.onNext(new SearchQuery(currentQuery));
+        searchSubject.onNext(currentQuery);
     }
-
 
     private void resetToInitialState() {
         if (view == null) return;
@@ -110,22 +96,15 @@ public class SearchPresenter implements SearchContract.Presenter {
                 break;
             case TAB_INGREDIENTS:
                 view.hideSearchPlaceholder();
-                if (allIngredients != null && !allIngredients.isEmpty()) {
-                    view.showIngredients(allIngredients);
-                } else {
-                    loadAllIngredients();
-                }
+                loadAllIngredients();
                 break;
             case TAB_COUNTRY:
                 view.hideSearchPlaceholder();
-                if (allAreas != null && !allAreas.isEmpty()) {
-                    view.showAreas(allAreas);
-                } else {
-                    loadAllAreas();
-                }
+                loadAllAreas();
                 break;
         }
     }
+
 
     @Override
     public void onTabChanged(int tabIndex) {
@@ -133,6 +112,7 @@ public class SearchPresenter implements SearchContract.Presenter {
 
         if (view == null) return;
 
+        cancelCurrentSearch();
         view.hideEmptyState();
 
         if (currentQuery.isEmpty()) {
@@ -143,6 +123,7 @@ public class SearchPresenter implements SearchContract.Presenter {
         }
     }
 
+
     private void performSearch(String query) {
         if (view == null) return;
 
@@ -152,213 +133,199 @@ public class SearchPresenter implements SearchContract.Presenter {
             return;
         }
 
+        cancelCurrentSearch();
+
         switch (currentTab) {
             case TAB_MEALS:
                 searchMeals(query);
                 break;
             case TAB_INGREDIENTS:
-                filterIngredients(query);
+                searchIngredients(query);
                 break;
             case TAB_COUNTRY:
-                filterAreas(query);
+                searchAreas(query);
                 break;
         }
     }
 
     private void searchMeals(String query) {
-        repository.searchMealsByName(query, new ResultCallback<List<Meal>>() {
-            @Override
-            public void onSuccess(List<Meal> meals) {
-                if (view == null) return;
-
-                if (!query.equals(currentQuery)) return;
-
-                view.hideLoading();
-
-                if (meals == null || meals.isEmpty()) {
-                    view.showEmptyMeals();
-                } else {
-                    view.hideEmptyState();
-                    view.showMeals(meals);
-                }
-            }
-
-            @Override
-            public void onError(Exception e) {
-                if (view == null) return;
-
-                if (!query.equals(currentQuery)) return;
-
-                view.hideLoading();
-                view.showError(e.getMessage());
-            }
-        });
+        currentSearchDisposable = repository.searchMealsByName(query)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        meals -> handleMealsResult(query, meals),
+                        throwable -> handleSearchError(query, throwable)
+                );
+        disposables.add(currentSearchDisposable);
     }
 
-    private void filterIngredients(String query) {
-        if (allIngredients == null || allIngredients.isEmpty()) {
-            repository.getAllIngredients(new ResultCallback<List<Ingredient>>() {
-                @Override
-                public void onSuccess(List<Ingredient> ingredients) {
-                    allIngredients = ingredients;
-
-                    if (!query.equals(currentQuery)) return;
-
-                    filterIngredientsLocally(query);
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    if (view == null) return;
-                    view.hideLoading();
-                    view.showError(e.getMessage());
-                }
-            });
-        } else {
-            filterIngredientsLocally(query);
-        }
+    private void searchIngredients(String query) {
+        currentSearchDisposable = repository.searchIngredientsByName(query)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        ingredients -> handleIngredientsResult(query, ingredients),
+                        throwable -> handleSearchError(query, throwable)
+                );
+        disposables.add(currentSearchDisposable);
     }
 
-    private void filterIngredientsLocally(String query) {
-        if (view == null) return;
+    private void searchAreas(String query) {
+        currentSearchDisposable = repository.searchAreasByName(query)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        areas -> handleAreasResult(query, areas),
+                        throwable -> handleSearchError(query, throwable)
+                );
+        disposables.add(currentSearchDisposable);
+    }
 
-        String lowerQuery = query.toLowerCase();
-        List<Ingredient> filtered = new ArrayList<>();
 
-        for (Ingredient ingredient : allIngredients) {
-            if (ingredient != null &&
-                    ingredient.getName() != null &&
-                    ingredient.getName().toLowerCase().contains(lowerQuery)) {
-                filtered.add(ingredient);
-            }
-        }
+    private void handleMealsResult(String query, List<Meal> meals) {
+        if (!isValidResult(query)) return;
 
         view.hideLoading();
 
-        if (filtered.isEmpty()) {
+        if (meals == null || meals.isEmpty()) {
+            view.showEmptyMeals();
+        } else {
+            view.hideEmptyState();
+            view.showMeals(meals);
+        }
+    }
+
+    private void handleIngredientsResult(String query, List<Ingredient> ingredients) {
+        if (!isValidResult(query)) return;
+
+        view.hideLoading();
+
+        if (ingredients == null || ingredients.isEmpty()) {
             view.showEmptyIngredients();
         } else {
             view.hideEmptyState();
-            view.showIngredients(filtered);
+            view.showIngredients(ingredients);
         }
     }
 
-    private void filterAreas(String query) {
-        if (allAreas == null || allAreas.isEmpty()) {
-            repository.getAllAreas(new ResultCallback<List<Area>>() {
-                @Override
-                public void onSuccess(List<Area> areas) {
-                    allAreas = areas;
-
-                    if (!query.equals(currentQuery)) return;
-
-                    filterAreasLocally(query);
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    if (view == null) return;
-                    view.hideLoading();
-                    view.showError(e.getMessage());
-                }
-            });
-        } else {
-            filterAreasLocally(query);
-        }
-    }
-
-    private void filterAreasLocally(String query) {
-        if (view == null) return;
-
-        String lowerQuery = query.toLowerCase();
-        List<Area> filtered = new ArrayList<>();
-
-        for (Area area : allAreas) {
-            if (area != null &&
-                    area.getName() != null &&
-                    area.getName().toLowerCase().contains(lowerQuery)) {
-                filtered.add(area);
-            }
-        }
+    private void handleAreasResult(String query, List<Area> areas) {
+        if (!isValidResult(query)) return;
 
         view.hideLoading();
 
-        if (filtered.isEmpty()) {
+        if (areas == null || areas.isEmpty()) {
             view.showEmptyAreas();
         } else {
             view.hideEmptyState();
-            view.showAreas(filtered);
+            view.showAreas(areas);
         }
     }
+
+    private boolean isValidResult(String query) {
+        return view != null && query.equals(currentQuery);
+    }
+
 
     @Override
     public void loadInitialData() {
-        loadAllIngredients();
-        loadAllAreas();
+        preloadIngredients();
+        preloadAreas();
+    }
+
+    private void preloadIngredients() {
+        Disposable disposable = repository.getAllIngredients()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        ingredients -> {
+                            if (view != null && currentTab == TAB_INGREDIENTS && currentQuery.isEmpty()) {
+                                view.hideLoading();
+                                view.showIngredients(ingredients);
+                            }
+                        },
+                        throwable -> {
+                        }
+                );
+        disposables.add(disposable);
+    }
+
+    private void preloadAreas() {
+        Disposable disposable = repository.getAllAreas()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        areas -> {
+                            if (view != null && currentTab == TAB_COUNTRY && currentQuery.isEmpty()) {
+                                view.hideLoading();
+                                view.showAreas(areas);
+                            }
+                        },
+                        throwable -> {
+
+                        }
+                );
+        disposables.add(disposable);
     }
 
     private void loadAllIngredients() {
-        if (view != null && currentTab == TAB_INGREDIENTS) {
+        if (view != null) {
             view.showLoading();
         }
 
-        repository.getAllIngredients(new ResultCallback<List<Ingredient>>() {
-            @Override
-            public void onSuccess(List<Ingredient> ingredients) {
-                allIngredients = ingredients;
-
-                if (view != null) {
-                    view.hideLoading();
-                    if (currentTab == TAB_INGREDIENTS && currentQuery.isEmpty()) {
-                        view.showIngredients(ingredients);
-                    }
-                }
-            }
-
-            @Override
-            public void onError(Exception e) {
-                if (view != null) {
-                    view.hideLoading();
-                    if (currentTab == TAB_INGREDIENTS) {
-                        view.showError("Failed to load ingredients");
-                    }
-                }
-            }
-        });
+        Disposable disposable = repository.getAllIngredients()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        ingredients -> {
+                            if (view != null) {
+                                view.hideLoading();
+                                if (currentTab == TAB_INGREDIENTS && currentQuery.isEmpty()) {
+                                    if (ingredients == null || ingredients.isEmpty()) {
+                                        view.showEmptyIngredients();
+                                    } else {
+                                        view.hideEmptyState();
+                                        view.showIngredients(ingredients);
+                                    }
+                                }
+                            }
+                        },
+                        throwable -> handleError("Failed to load ingredients")
+                );
+        disposables.add(disposable);
     }
 
     private void loadAllAreas() {
-        if (view != null && currentTab == TAB_COUNTRY) {
+        if (view != null) {
             view.showLoading();
         }
 
-        repository.getAllAreas(new ResultCallback<List<Area>>() {
-            @Override
-            public void onSuccess(List<Area> areas) {
-                allAreas = areas;
-
-                if (view != null) {
-                    view.hideLoading();
-                    if (currentTab == TAB_COUNTRY && currentQuery.isEmpty()) {
-                        view.showAreas(areas);
-                    }
-                }
-            }
-
-            @Override
-            public void onError(Exception e) {
-                if (view != null) {
-                    view.hideLoading();
-                    if (currentTab == TAB_COUNTRY) {
-                        view.showError("Failed to load countries");
-                    }
-                }
-            }
-        });
+        Disposable disposable = repository.getAllAreas()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        areas -> {
+                            if (view != null) {
+                                view.hideLoading();
+                                if (currentTab == TAB_COUNTRY && currentQuery.isEmpty()) {
+                                    if (areas == null || areas.isEmpty()) {
+                                        view.showEmptyAreas();
+                                    } else {
+                                        view.hideEmptyState();
+                                        view.showAreas(areas);
+                                    }
+                                }
+                            }
+                        },
+                        throwable -> handleError("Failed to load countries")
+                );
+        disposables.add(disposable);
     }
+
 
     @Override
     public void onMealClicked(Meal meal) {
+        if (view != null && meal != null) {
+        }
     }
 
     @Override
@@ -385,9 +352,62 @@ public class SearchPresenter implements SearchContract.Presenter {
         }
     }
 
+
+    private void handleSearchError(String query, Throwable throwable) {
+        if (!isValidResult(query)) return;
+
+        view.hideLoading();
+        view.showError(getErrorMessage(throwable));
+    }
+
+    private void handleError(String message) {
+        if (view != null) {
+            view.hideLoading();
+            view.showError(message);
+        }
+    }
+
+    private String getErrorMessage(Throwable throwable) {
+        if (throwable == null) {
+            return "An unknown error occurred";
+        }
+
+        String message = throwable.getMessage();
+        if (message == null || message.isEmpty()) {
+            return "An error occurred while searching";
+        }
+
+        if (throwable instanceof java.net.UnknownHostException) {
+            return "No internet connection";
+        } else if (throwable instanceof java.net.SocketTimeoutException) {
+            return "Connection timed out";
+        } else if (throwable instanceof java.io.IOException) {
+            return "Network error occurred";
+        }
+
+        return message;
+    }
+
+
+    private void cancelCurrentSearch() {
+        if (currentSearchDisposable != null && !currentSearchDisposable.isDisposed()) {
+            currentSearchDisposable.dispose();
+        }
+    }
+
+    public int getCurrentTab() {
+        return currentTab;
+    }
+
+    public String getCurrentQuery() {
+        return currentQuery;
+    }
+
+
     @Override
     public void dispose() {
+        cancelCurrentSearch();
         disposables.clear();
-        repository.dispose();
+        repository.clearCache();
     }
 }
