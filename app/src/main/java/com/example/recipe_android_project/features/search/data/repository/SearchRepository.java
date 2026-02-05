@@ -25,8 +25,6 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 public class SearchRepository {
 
     private final SearchRemoteDataSource remoteDataSource;
-    private final CompositeDisposable disposables = new CompositeDisposable();
-
     private IngredientList cachedIngredients;
     private AreaList cachedAreas;
 
@@ -34,151 +32,78 @@ public class SearchRepository {
         this.remoteDataSource = new SearchRemoteDataSource();
     }
 
-    public void searchMealsByName(String name, ResultCallback<List<Meal>> callback) {
-        Disposable disposable = remoteDataSource.searchMealsByName(name)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+    public Single<List<Meal>> searchMealsByName(String name) {
+        return remoteDataSource.searchMealsByName(name)
                 .map(response -> {
                     if (response == null || response.getMeals() == null) {
                         return new ArrayList<Meal>();
                     }
                     return MealMapper.toDomainList(response.getMeals());
-                })
-                .subscribe(
-                        callback::onSuccess,
-                        throwable -> callback.onError(new Exception(throwable.getMessage(), throwable))
-                );
-        disposables.add(disposable);
+                });
     }
 
-
-
-    public void getMealById(String id, ResultCallback<Meal> callback) {
-        Disposable disposable = remoteDataSource.getMealById(id)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        response -> {
-                            if (response == null || response.getMeals() == null || response.getMeals().isEmpty()) {
-                                callback.onError(new Exception("Meal not found"));
-                            } else {
-                                Meal meal = MealMapper.toDomain(response.getMeals().get(0));
-                                callback.onSuccess(meal);
-                            }
-                        },
-                        throwable -> callback.onError(new Exception(throwable.getMessage(), throwable))
-                );
-        disposables.add(disposable);
+    public Single<Meal> getMealById(String id) {
+        return remoteDataSource.getMealById(id)
+                .flatMap(response -> {
+                    if (response == null || response.getMeals() == null || response.getMeals().isEmpty()) {
+                        return Single.error(new Exception("Meal not found"));
+                    }
+                    return Single.just(MealMapper.toDomain(response.getMeals().get(0)));
+                });
     }
 
-
-    public void filterMealsByIngredient(String ingredient, ResultCallback<FilterResultList> callback) {
-        Disposable disposable = remoteDataSource.filterMealsByIngredient(ingredient)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .map(FilterResultMapper::toDomain)
-                .subscribe(
-                        callback::onSuccess,
-                        throwable -> callback.onError(new Exception(throwable.getMessage(), throwable))
-                );
-        disposables.add(disposable);
-    }
-    public void filterMealsByArea(String area, ResultCallback<FilterResultList> callback) {
-        Disposable disposable = remoteDataSource.filterMealsByArea(area)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .map(FilterResultMapper::toDomain)
-                .subscribe(
-                        callback::onSuccess,
-                        throwable -> callback.onError(new Exception(throwable.getMessage(), throwable))
-                );
-        disposables.add(disposable);
+    public Single<FilterResultList> filterMealsByIngredient(String ingredient) {
+        return remoteDataSource.filterMealsByIngredient(ingredient)
+                .map(FilterResultMapper::toDomain);
     }
 
+    public Single<FilterResultList> filterMealsByArea(String area) {
+        return remoteDataSource.filterMealsByArea(area)
+                .map(FilterResultMapper::toDomain);
+    }
 
-
-
-    public void getAllAreas(ResultCallback<List<Area>> callback) {
-        Disposable disposable = remoteDataSource.getAllAreas()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+    public Single<List<Area>> getAllAreas() {
+        return remoteDataSource.getAllAreas()
                 .map(AreaMapper::toDomain)
                 .doOnSuccess(areaList -> cachedAreas = areaList)
-                .map(AreaList::getAreas)
-                .subscribe(
-                        callback::onSuccess,
-                        throwable -> callback.onError(new Exception(throwable.getMessage(), throwable))
-                );
-        disposables.add(disposable);
+                .map(AreaList::getAreas);
     }
 
-
-
-    public void getAllIngredients(ResultCallback<List<Ingredient>> callback) {
-        Disposable disposable = remoteDataSource.getAllIngredients()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+    public Single<List<Ingredient>> getAllIngredients() {
+        return remoteDataSource.getAllIngredients()
                 .map(IngredientMapper::toDomain)
                 .doOnSuccess(ingredientList -> cachedIngredients = ingredientList)
-                .map(IngredientList::getIngredients)
-                .subscribe(
-                        callback::onSuccess,
-                        throwable -> callback.onError(new Exception(throwable.getMessage(), throwable))
-                );
-        disposables.add(disposable);
+                .map(IngredientList::getIngredients);
     }
 
-
-    public void searchIngredientsByName(String query, ResultCallback<List<Ingredient>> callback) {
+    public Single<List<Ingredient>> searchIngredientsByName(String query) {
         String searchQuery = query.toLowerCase().trim();
 
-        Single<IngredientList> source = getIngredientsSource();
-
-        Disposable disposable = source
-                .subscribeOn(Schedulers.io())
+        return getIngredientsSource()
                 .flattenAsObservable(IngredientList::getIngredients)
                 .filter(ingredient ->
                         ingredient != null &&
                                 ingredient.getName() != null &&
-                                ingredient.getName().toLowerCase().contains(searchQuery)
-                )
-                .toList()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        callback::onSuccess,
-                        throwable -> callback.onError(new Exception(throwable.getMessage(), throwable))
-                );
-        disposables.add(disposable);
+                                ingredient.getName().toLowerCase().contains(searchQuery))
+                .toList();
     }
 
-    public void searchAreasByName(String query, ResultCallback<List<Area>> callback) {
+    public Single<List<Area>> searchAreasByName(String query) {
         String searchQuery = query.toLowerCase().trim();
 
-        Single<AreaList> source = getAreasSource();
-
-        Disposable disposable = source
-                .subscribeOn(Schedulers.io())
+        return getAreasSource()
                 .flattenAsObservable(AreaList::getAreas)
                 .filter(area ->
                         area != null &&
                                 area.getName() != null &&
-                                area.getName().toLowerCase().contains(searchQuery)
-                )
-                .toList()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        callback::onSuccess,
-                        throwable -> callback.onError(new Exception(throwable.getMessage(), throwable))
-                );
-        disposables.add(disposable);
+                                area.getName().toLowerCase().contains(searchQuery))
+                .toList();
     }
-
 
     private Single<IngredientList> getIngredientsSource() {
         if (cachedIngredients != null && !cachedIngredients.isEmpty()) {
             return Single.just(cachedIngredients);
         }
-
         return remoteDataSource.getAllIngredients()
                 .map(IngredientMapper::toDomain)
                 .doOnSuccess(ingredientList -> cachedIngredients = ingredientList);
@@ -188,37 +113,13 @@ public class SearchRepository {
         if (cachedAreas != null && !cachedAreas.isEmpty()) {
             return Single.just(cachedAreas);
         }
-
         return remoteDataSource.getAllAreas()
                 .map(AreaMapper::toDomain)
                 .doOnSuccess(areaList -> cachedAreas = areaList);
     }
 
-
-
     public void clearCache() {
         cachedIngredients = null;
         cachedAreas = null;
-    }
-
-    public boolean hasIngredientsCache() {
-        return cachedIngredients != null && !cachedIngredients.isEmpty();
-    }
-
-    public boolean hasAreasCache() {
-        return cachedAreas != null && !cachedAreas.isEmpty();
-    }
-
-    public IngredientList getCachedIngredients() {
-        return cachedIngredients;
-    }
-
-    public AreaList getCachedAreas() {
-        return cachedAreas;
-    }
-
-
-    public void dispose() {
-        disposables.clear();
     }
 }
