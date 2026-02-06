@@ -77,6 +77,8 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         emailEt = view.findViewById(R.id.emailEt);
         passTil = view.findViewById(R.id.passTil);
         passEt = view.findViewById(R.id.passEt);
+
+        btnLogin.setEnabled(false);
     }
 
     private void setupBottomText() {
@@ -121,9 +123,9 @@ public class LoginFragment extends Fragment implements LoginContract.View {
 
         tvForgot.setOnClickListener(v -> navigateToForgotPassword());
 
-        btnGoogle.setOnClickListener(v -> {
-            showErrorSnackbar("Google Sign-In coming soon!");
-        });
+        btnGoogle.setOnClickListener(v ->
+                showErrorSnackbar("Google Sign-In coming soon!")
+        );
 
         btnLogin.setOnClickListener(v -> {
             String email = getTextFromEditText(emailEt);
@@ -136,22 +138,47 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         emailEt.addTextChangedListener(new SimpleTextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
-                emailTil.setError(null);
+                presenter.onEmailChanged(s.toString());
+            }
+        });
+
+        emailEt.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                String email = getTextFromEditText(emailEt);
+                if (!email.isEmpty()) {
+                    presenter.validateEmail(email);
+                }
             }
         });
 
         passEt.addTextChangedListener(new SimpleTextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
-                passTil.setError(null);
+                presenter.onPasswordChanged(s.toString());
             }
         });
+
+        passEt.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                String password = getTextFromEditText(passEt);
+                if (!password.isEmpty()) {
+                    presenter.validatePassword(password);
+                }
+            }
+        });
+    }
+
+    private abstract static class SimpleTextWatcher implements TextWatcher {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {}
     }
 
     private String getTextFromEditText(TextInputEditText editText) {
         return editText.getText() != null ? editText.getText().toString().trim() : "";
     }
-
 
     @Override
     public void showLoading(String message) {
@@ -166,7 +193,6 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     }
 
     private void setButtonsEnabled(boolean enabled) {
-        btnLogin.setEnabled(enabled);
         btnGoogle.setEnabled(enabled);
         btnClose.setEnabled(enabled);
     }
@@ -182,9 +208,24 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     }
 
     @Override
+    public void clearEmailError() {
+        emailTil.setError(null);
+    }
+
+    @Override
+    public void clearPasswordError() {
+        passTil.setError(null);
+    }
+
+    @Override
     public void clearErrors() {
         emailTil.setError(null);
         passTil.setError(null);
+    }
+
+    @Override
+    public void setLoginButtonEnabled(boolean enabled) {
+        btnLogin.setEnabled(enabled);
     }
 
     @Override
@@ -224,24 +265,15 @@ public class LoginFragment extends Fragment implements LoginContract.View {
         showErrorSnackbar("Forgot Password coming soon!");
     }
 
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
         if (loadingDialog != null) {
             loadingDialog.dismiss();
         }
         if (presenter != null) {
-            presenter.detachView();
+            presenter.onDestroy();
         }
-    }
-
-
-    private abstract static class SimpleTextWatcher implements TextWatcher {
-        @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {}
     }
 }

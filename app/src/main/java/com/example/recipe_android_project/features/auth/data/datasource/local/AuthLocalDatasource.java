@@ -2,8 +2,6 @@ package com.example.recipe_android_project.features.auth.data.datasource.local;
 
 import android.content.Context;
 
-import androidx.lifecycle.LiveData;
-
 import com.example.recipe_android_project.core.config.DbManager;
 import com.example.recipe_android_project.core.helper.SharedPreferencesManager;
 import com.example.recipe_android_project.core.utils.PasswordHasher;
@@ -12,6 +10,11 @@ import com.example.recipe_android_project.features.auth.data.entities.UserEntity
 
 import java.util.List;
 import java.util.UUID;
+
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Maybe;
+import io.reactivex.rxjava3.core.Single;
 
 public class AuthLocalDatasource {
 
@@ -30,85 +33,87 @@ public class AuthLocalDatasource {
         prefsManager = SharedPreferencesManager.getInstance(context);
     }
 
+    public Single<UserEntity> registerUser(String fullName, String email, String password) {
+        return Single.defer(() -> {
+            PasswordValidationResult validationResult = PasswordHasher.validatePasswordStrength(password);
+            if (!validationResult.isValid()) {
+                return Single.error(new Exception(validationResult.getMessage()));
+            }
 
-    public UserEntity registerUser(String fullName, String email, String password) throws Exception {
-        PasswordValidationResult validationResult = PasswordHasher.validatePasswordStrength(password);
-        if (!validationResult.isValid()) {
-            throw new Exception(validationResult.getMessage());
-        }
+            return userDao.isEmailExists(email)
+                    .flatMap(exists -> {
+                        if (exists) {
+                            return Single.error(new Exception("Email already registered"));
+                        }
 
-        if (userDao.isEmailExists(email)) {
-            throw new Exception("Email already registered");
-        }
+                        String hashedPassword = PasswordHasher.hashPassword(password);
 
-        String hashedPassword = PasswordHasher.hashPassword(password);
+                        UserEntity user = new UserEntity();
+                        user.setId(UUID.randomUUID().toString());
+                        user.setFullName(fullName);
+                        user.setEmail(email);
+                        user.setPassword(hashedPassword);
+                        user.setLoggedIn(true);
+                        user.setCreatedAt(System.currentTimeMillis());
+                        user.setUpdatedAt(System.currentTimeMillis());
 
-        UserEntity user = new UserEntity();
-        user.setId(UUID.randomUUID().toString());
-        user.setFullName(fullName);
-        user.setEmail(email);
-        user.setPassword(hashedPassword);
-        user.setLoggedIn(true);
-        user.setCreatedAt(System.currentTimeMillis());
-        user.setUpdatedAt(System.currentTimeMillis());
-
-        long result = userDao.insertUser(user);
-
-        if (result > 0) {
-            saveUserSession(user);
-            user.setPassword(null);
-            return user;
-        } else {
-            throw new Exception("Failed to register user");
-        }
+                        return userDao.insertUser(user)
+                                .flatMap(result -> {
+                                    if (result > 0) {
+                                        saveUserSession(user);
+                                        user.setPassword(null);
+                                        return Single.just(user);
+                                    } else {
+                                        return Single.error(new Exception("Failed to register user"));
+                                    }
+                                });
+                    });
+        });
     }
+    public Single<UserEntity> login(String email, String password) {
+        return userDao.getUserByEmail(email)
+                .switchIfEmpty(Single.error(new Exception("Invalid email or password")))
+                .flatMap(user -> {
+                    boolean isPasswordValid = PasswordHasher.verifyPassword(password, user.getPassword());
 
-    public UserEntity login(String email, String password) throws Exception {
-        UserEntity user = userDao.getUserByEmail(email);
+                    if (!isPasswordValid) {
+                        return Single.error(new Exception("Invalid email or password"));
+                    }
 
-        if (user == null) {
-            throw new Exception("Invalid email or password");
-        }
+                    Single<Integer> rehashSingle;
+                    if (PasswordHasher.needsRehash(user.getPassword())) {
+                        String newHash = PasswordHasher.hashPassword(password);
+                        rehashSingle = userDao.updatePassword(user.getId(), newHash, System.currentTimeMillis());
+                    } else {
+                        rehashSingle = Single.just(0);
+                    }
 
-        boolean isPasswordValid = PasswordHasher.verifyPassword(password, user.getPassword());
-
-        if (!isPasswordValid) {
-            throw new Exception("Invalid email or password");
-        }
-
-        if (PasswordHasher.needsRehash(user.getPassword())) {
-            String newHash = PasswordHasher.hashPassword(password);
-            userDao.updatePassword(user.getId(), newHash, System.currentTimeMillis());
-        }
-
-        userDao.logoutAllUsers();
-        userDao.updateLoginStatus(user.getId(), true, System.currentTimeMillis());
-        user.setLoggedIn(true);
-
-        saveUserSession(user);
-
-        user.setPassword(null);
-        return user;
+                    return rehashSingle
+                            .flatMap(ignored -> userDao.logoutAllUsers())
+                            .flatMap(ignored -> userDao.updateLoginStatus(user.getId(), true, System.currentTimeMillis()))
+                            .map(ignored -> {
+                                user.setLoggedIn(true);
+                                saveUserSession(user);
+                                user.setPassword(null);
+                                return user;
+                            });
+                });
     }
-
-    public boolean logout() {
-        int result = userDao.logoutAllUsers();
-        clearUserSession();
-        return result >= 0;
+    public Completable logout() {
+        return userDao.logoutAllUsers()
+                .doOnSuccess(result -> clearUserSession())
+                .ignoreElement();
     }
-
-    public boolean logoutUser(String userId) {
-        int result = userDao.updateLoginStatus(userId, false, System.currentTimeMillis());
-
-        String currentUserId = prefsManager.getString(KEY_USER_ID, null);
-        if (userId.equals(currentUserId)) {
-            clearUserSession();
-        }
-
-        return result > 0;
+    public Completable logoutUser(String userId) {
+        return userDao.updateLoginStatus(userId, false, System.currentTimeMillis())
+                .doOnSuccess(result -> {
+                    String currentUserId = prefsManager.getString(KEY_USER_ID, null);
+                    if (userId.equals(currentUserId)) {
+                        clearUserSession();
+                    }
+                })
+                .ignoreElement();
     }
-
-
     private void saveUserSession(UserEntity user) {
         prefsManager.putString(KEY_USER_ID, user.getId());
         prefsManager.putString(KEY_USER_EMAIL, user.getEmail());
@@ -116,7 +121,6 @@ public class AuthLocalDatasource {
         prefsManager.putBoolean(KEY_IS_LOGGED_IN, true);
         prefsManager.putLong(KEY_LOGIN_TIME, System.currentTimeMillis());
     }
-
     private void clearUserSession() {
         prefsManager.remove(KEY_USER_ID);
         prefsManager.remove(KEY_USER_EMAIL);
@@ -124,179 +128,93 @@ public class AuthLocalDatasource {
         prefsManager.putBoolean(KEY_IS_LOGGED_IN, false);
         prefsManager.remove(KEY_LOGIN_TIME);
     }
-
-    public String getSessionUserId() {
-        return prefsManager.getString(KEY_USER_ID, null);
-    }
-
-    public String getSessionUserEmail() {
-        return prefsManager.getString(KEY_USER_EMAIL, null);
-    }
-
-    public String getSessionUserName() {
-        return prefsManager.getString(KEY_USER_NAME, null);
-    }
-
     public boolean isSessionLoggedIn() {
         return prefsManager.getBoolean(KEY_IS_LOGGED_IN, false);
     }
-
-    public long getSessionLoginTime() {
-        return prefsManager.getLong(KEY_LOGIN_TIME, 0);
-    }
-
-
-
-    public UserEntity getCurrentUser() throws Exception {
+    public Single<UserEntity> getCurrentUser() {
         String userId = prefsManager.getString(KEY_USER_ID, null);
 
-        UserEntity user;
+        Maybe<UserEntity> userMaybe;
         if (userId != null) {
-            user = userDao.getUserById(userId);
+            userMaybe = userDao.getUserById(userId);
         } else {
-            user = userDao.getLoggedInUser();
+            userMaybe = userDao.getLoggedInUser();
         }
 
-        if (user != null) {
-            user.setPassword(null);
-            return user;
-        } else {
-            clearUserSession();
-            throw new Exception("No user logged in");
-        }
+        return userMaybe
+                .switchIfEmpty(Single.defer(() -> {
+                    clearUserSession();
+                    return Single.error(new Exception("No user logged in"));
+                }))
+                .map(user -> {
+                    user.setPassword(null);
+                    return user;
+                });
     }
-
-    public LiveData<UserEntity> getCurrentUserLive() {
-        return userDao.getLoggedInUserLive();
-    }
-
-
-    public boolean isUserLoggedIn() {
-        boolean isLoggedInPrefs = prefsManager.getBoolean(KEY_IS_LOGGED_IN, false);
-
-        if (isLoggedInPrefs) {
-            String userId = prefsManager.getString(KEY_USER_ID, null);
-            if (userId != null) {
-                UserEntity user = userDao.getUserById(userId);
-                if (user != null && user.isLoggedIn()) {
-                    return true;
-                }
-            }
-            clearUserSession();
-        }
-
-        return userDao.isAnyUserLoggedIn();
-    }
-
-    public boolean isEmailExists(String email) {
+    public Single<Boolean> isEmailExists(String email) {
         return userDao.isEmailExists(email);
     }
-
-
-    public UserEntity getUserById(String userId) throws Exception {
-        UserEntity user = userDao.getUserById(userId);
-        if (user != null) {
-            user.setPassword(null);
-            return user;
-        } else {
-            throw new Exception("User not found");
-        }
-    }
-
-    public LiveData<UserEntity> getUserByIdLive(String userId) {
-        return userDao.getUserByIdLive(userId);
-    }
-
-    public List<UserEntity> getAllUsers() {
-        List<UserEntity> users = userDao.getAllUsers();
-        for (UserEntity user : users) {
-            user.setPassword(null);
-        }
-        return users;
-    }
-
-    public LiveData<List<UserEntity>> getAllUsersLive() {
-        return userDao.getAllUsersLive();
-    }
-
-
-    public boolean updateUser(UserEntity user) {
+    public Single<Boolean> updateUser(UserEntity user) {
         user.setUpdatedAt(System.currentTimeMillis());
-        int result = userDao.updateUser(user);
-
-        String currentUserId = prefsManager.getString(KEY_USER_ID, null);
-        if (user.getId().equals(currentUserId)) {
-            prefsManager.putString(KEY_USER_NAME, user.getFullName());
-            prefsManager.putString(KEY_USER_EMAIL, user.getEmail());
-        }
-
-        return result > 0;
+        return userDao.updateUser(user)
+                .map(result -> {
+                    if (result > 0) {
+                        String currentUserId = prefsManager.getString(KEY_USER_ID, null);
+                        if (user.getId().equals(currentUserId)) {
+                            prefsManager.putString(KEY_USER_NAME, user.getFullName());
+                            prefsManager.putString(KEY_USER_EMAIL, user.getEmail());
+                        }
+                        return true;
+                    }
+                    return false;
+                });
     }
 
-    public boolean updateFullName(String userId, String fullName) {
-        int result = userDao.updateFullName(userId, fullName, System.currentTimeMillis());
-
-        String currentUserId = prefsManager.getString(KEY_USER_ID, null);
-        if (userId.equals(currentUserId)) {
-            prefsManager.putString(KEY_USER_NAME, fullName);
-        }
-
-        return result > 0;
+    public Single<Boolean> updateFullName(String userId, String fullName) {
+        return userDao.updateFullName(userId, fullName, System.currentTimeMillis())
+                .map(result -> {
+                    if (result > 0) {
+                        String currentUserId = prefsManager.getString(KEY_USER_ID, null);
+                        if (userId.equals(currentUserId)) {
+                            prefsManager.putString(KEY_USER_NAME, fullName);
+                        }
+                        return true;
+                    }
+                    return false;
+                });
     }
 
-    public boolean updatePassword(String userId, String oldPassword, String newPassword) throws Exception {
-        PasswordValidationResult validationResult = PasswordHasher.validatePasswordStrength(newPassword);
-        if (!validationResult.isValid()) {
-            throw new Exception(validationResult.getMessage());
-        }
+    public Single<Boolean> updatePassword(String userId, String oldPassword, String newPassword) {
+        return Single.defer(() -> {
+            PasswordValidationResult validationResult = PasswordHasher.validatePasswordStrength(newPassword);
+            if (!validationResult.isValid()) {
+                return Single.error(new Exception(validationResult.getMessage()));
+            }
 
-        UserEntity user = userDao.getUserById(userId);
+            return userDao.getUserById(userId)
+                    .switchIfEmpty(Single.error(new Exception("User not found")))
+                    .flatMap(user -> {
+                        if (!PasswordHasher.verifyPassword(oldPassword, user.getPassword())) {
+                            return Single.error(new Exception("Current password is incorrect"));
+                        }
 
-        if (user == null) {
-            throw new Exception("User not found");
-        }
-
-        if (!PasswordHasher.verifyPassword(oldPassword, user.getPassword())) {
-            throw new Exception("Current password is incorrect");
-        }
-
-        String hashedNewPassword = PasswordHasher.hashPassword(newPassword);
-        int result = userDao.updatePassword(userId, hashedNewPassword, System.currentTimeMillis());
-
-        return result > 0;
+                        String hashedNewPassword = PasswordHasher.hashPassword(newPassword);
+                        return userDao.updatePassword(userId, hashedNewPassword, System.currentTimeMillis())
+                                .map(result -> result > 0);
+                    });
+        });
     }
-
-
-    public boolean deleteUser(UserEntity user) {
-        int result = userDao.deleteUser(user);
-
-        String currentUserId = prefsManager.getString(KEY_USER_ID, null);
-        if (user.getId().equals(currentUserId)) {
-            clearUserSession();
-        }
-
-        return result > 0;
-    }
-
-    public boolean deleteUserById(String userId) {
-        int result = userDao.deleteUserById(userId);
-
-        String currentUserId = prefsManager.getString(KEY_USER_ID, null);
-        if (userId.equals(currentUserId)) {
-            clearUserSession();
-        }
-
-        return result > 0;
-    }
-
-    public boolean deleteAllUsers() {
-        int result = userDao.deleteAllUsers();
-        clearUserSession();
-        return result >= 0;
-    }
-
-
-    public PasswordValidationResult validatePassword(String password) {
-        return PasswordHasher.validatePasswordStrength(password);
+    public Single<Boolean> deleteUser(UserEntity user) {
+        return userDao.deleteUser(user)
+                .map(result -> {
+                    if (result > 0) {
+                        String currentUserId = prefsManager.getString(KEY_USER_ID, null);
+                        if (user.getId().equals(currentUserId)) {
+                            clearUserSession();
+                        }
+                        return true;
+                    }
+                    return false;
+                });
     }
 }
