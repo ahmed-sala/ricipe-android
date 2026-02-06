@@ -96,7 +96,6 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
         rvMeals.setAdapter(mealAdapter);
     }
 
-
     private void showFeaturedLoading() {
         if (lottieFeaturedLoading != null) {
             lottieFeaturedLoading.setVisibility(View.VISIBLE);
@@ -117,7 +116,6 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
             lottieFeaturedLoading.setVisibility(View.GONE);
         }
     }
-
 
     @Override
     public void showScreenLoading() {
@@ -201,23 +199,25 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
     public void onDestroyView() {
         super.onDestroyView();
 
-        // ✅ cleanup
         Glide.with(this).clear(imgFeatured);
         if (lottieFeaturedLoading != null) lottieFeaturedLoading.cancelAnimation();
         if (lottieScreenLoading != null) lottieScreenLoading.cancelAnimation();
 
-        if (presenter != null) presenter.detach();
+        if (presenter != null) {
+            presenter.detach();
+        }
     }
+
     @Override
-    public void hideMealOfDayLoading() { hideFeaturedLoading(); }
+    public void hideMealOfDayLoading() {
+        hideFeaturedLoading();
+    }
 
     @Override
     public void onMealClick(Meal meal, int position) {
-
     }
 
     @Override
     public void onFavoriteClick(Meal meal, int position, boolean isFavorite) {
-
     }
 }
