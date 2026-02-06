@@ -2,10 +2,6 @@ package com.example.recipe_android_project.features.auth.data.repository;
 
 import android.content.Context;
 
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.Transformations;
-
-import com.example.recipe_android_project.core.config.ResultCallback;
 import com.example.recipe_android_project.core.utils.PasswordHasher;
 import com.example.recipe_android_project.core.utils.PasswordHasher.PasswordValidationResult;
 import com.example.recipe_android_project.features.auth.data.datasource.local.AuthLocalDatasource;
@@ -14,9 +10,9 @@ import com.example.recipe_android_project.features.auth.data.entities.UserEntity
 import com.example.recipe_android_project.features.auth.data.mapper.UserMapper;
 import com.example.recipe_android_project.features.auth.domain.model.User;
 
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class AuthRepository {
 
@@ -24,135 +20,96 @@ public class AuthRepository {
 
     private final AuthLocalDatasource localDatasource;
     private final AuthRemoteDatasource firebaseDatasource;
-    private final ExecutorService executorService;
 
     public AuthRepository(Context context) {
         this.localDatasource = new AuthLocalDatasource(context);
         this.firebaseDatasource = new AuthRemoteDatasource(context);
-        this.executorService = Executors.newSingleThreadExecutor();
     }
 
-
-    public void register(String fullName, String email, String password, ResultCallback<User> callback) {
-        executorService.execute(() -> {
-            try {
-                UserEntity entity;
-
-                if (firebaseDatasource.isNetworkAvailable()) {
-                    entity = registerWithFirebaseSync(fullName, email, password);
-                } else {
-                    entity = localDatasource.registerUser(fullName, email, password);
-                }
-
-                User user = UserMapper.toDomain(entity);
-                callback.onSuccess(user);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
-
-    private UserEntity registerWithFirebaseSync(String fullName, String email, String password) throws Exception {
-        UserEntity firebaseUser = firebaseDatasource.registerUser(fullName, email, password);
-
-        if (localDatasource.isEmailExists(email)) {
-            throw new Exception("Email already registered locally");
-        }
-
-        UserEntity localUser = new UserEntity();
-        localUser.setId(firebaseUser.getId());
-        localUser.setFullName(fullName);
-        localUser.setEmail(email);
-        localUser.setPassword(PasswordHasher.hashPassword(password));
-        localUser.setLoggedIn(true);
-        localUser.setCreatedAt(firebaseUser.getCreatedAt());
-        localUser.setUpdatedAt(firebaseUser.getUpdatedAt());
-
-        try {
-            localDatasource.registerUser(fullName, email, password);
-        } catch (Exception e) {
-        }
-
-        firebaseUser.setPassword(null);
-        return firebaseUser;
-    }
-
-
-    public void login(String email, String password, ResultCallback<User> callback) {
-        executorService.execute(() -> {
-            try {
-                UserEntity entity;
-
-                if (firebaseDatasource.isNetworkAvailable()) {
-                    entity = loginWithFirebaseSync(email, password);
-                } else {
-                    entity = localDatasource.login(email, password);
-                }
-
-                User user = UserMapper.toDomain(entity);
-                callback.onSuccess(user);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
-
-    private UserEntity loginWithFirebaseSync(String email, String password) throws Exception {
-        boolean existsInLocal = localDatasource.isEmailExists(email);
-        UserEntity firebaseUser = null;
-        UserEntity localUser = null;
-
-        try {
-            firebaseUser = firebaseDatasource.login(email, password);
-        } catch (Exception e) {
-        }
-
-        if (firebaseUser != null) {
-            if (existsInLocal) {
-                localUser = localDatasource.login(email, password);
-                syncFirestoreToLocal(firebaseUser, localUser);
-                localUser.setPassword(null);
-                return localUser;
-            } else {
-                localUser = createLocalUserFromFirebase(firebaseUser, password);
-                localUser.setPassword(null);
-                return localUser;
-            }
+    public Single<User> register(String fullName, String email, String password) {
+        if (firebaseDatasource.isNetworkAvailable()) {
+            return registerWithFirebaseSync(fullName, email, password)
+                    .map(UserMapper::toDomain)
+                    .subscribeOn(Schedulers.io());
         } else {
-            if (existsInLocal) {
-                localUser = localDatasource.login(email, password);
-                try {
-                    createFirebaseUserFromLocal(localUser, password);
-                } catch (Exception e) {
-                }
-                localUser.setPassword(null);
-                return localUser;
-            } else {
-                throw new Exception("Invalid email or password");
-            }
+            return localDatasource.registerUser(fullName, email, password)
+                    .map(UserMapper::toDomain)
+                    .subscribeOn(Schedulers.io());
         }
     }
 
-    private void syncFirestoreToLocal(UserEntity firebaseUser, UserEntity localUser) {
-        try {
-            if (firebaseUser.getFullName() != null && !firebaseUser.getFullName().equals(localUser.getFullName())) {
-                localDatasource.updateFullName(localUser.getId(), firebaseUser.getFullName());
-            }
-            firebaseDatasource.saveUserToFirestore(localUser);
-        } catch (Exception e) {
+    private Single<UserEntity> registerWithFirebaseSync(String fullName, String email, String password) {
+        return firebaseDatasource.registerUser(fullName, email, password)
+                .flatMap(firebaseUser ->
+                        localDatasource.isEmailExists(email)
+                                .flatMap(exists -> {
+                                    if (exists) {
+                                        return Single.error(new Exception("Email already registered locally"));
+                                    }
+                                    return localDatasource.registerUser(fullName, email, password)
+                                            .onErrorResumeNext(e -> {
+                                                firebaseUser.setPassword(null);
+                                                return Single.just(firebaseUser);
+                                            });
+                                })
+                );
+    }
+
+    public Single<User> login(String email, String password) {
+        if (firebaseDatasource.isNetworkAvailable()) {
+            return loginWithFirebaseSync(email, password)
+                    .map(UserMapper::toDomain)
+                    .subscribeOn(Schedulers.io());
+        } else {
+            return localDatasource.login(email, password)
+                    .map(UserMapper::toDomain)
+                    .subscribeOn(Schedulers.io());
         }
     }
 
-    private UserEntity createLocalUserFromFirebase(UserEntity firebaseUser, String password) throws Exception {
-        UserEntity newLocalUser = new UserEntity();
-        newLocalUser.setId(firebaseUser.getId());
-        newLocalUser.setFullName(firebaseUser.getFullName());
-        newLocalUser.setEmail(firebaseUser.getEmail());
-        newLocalUser.setPassword(PasswordHasher.hashPassword(password));
-        newLocalUser.setLoggedIn(true);
-        newLocalUser.setCreatedAt(firebaseUser.getCreatedAt());
-        newLocalUser.setUpdatedAt(System.currentTimeMillis());
+    private Single<UserEntity> loginWithFirebaseSync(String email, String password) {
+        return localDatasource.isEmailExists(email)
+                .flatMap(existsInLocal ->
+                        firebaseDatasource.login(email, password)
+                                .flatMap(firebaseUser -> {
+                                    if (existsInLocal) {
+                                        return localDatasource.login(email, password)
+                                                .doOnSuccess(localUser -> syncFirestoreToLocal(firebaseUser, localUser));
+                                    } else {
+                                        return createLocalUserFromFirebase(firebaseUser, password);
+                                    }
+                                })
+                                .onErrorResumeNext(firebaseError -> {
+                                    if (existsInLocal) {
+                                        return localDatasource.login(email, password)
+                                                .doOnSuccess(localUser ->
+                                                        createFirebaseUserFromLocal(localUser, password)
+                                                                .subscribeOn(Schedulers.io())
+                                                                .subscribe(() -> {}, e -> {})
+                                                );
+                                    } else {
+                                        return Single.error(new Exception("Invalid email or password"));
+                                    }
+                                })
+                );
+    }
 
+    private Completable syncFirestoreToLocal(UserEntity firebaseUser, UserEntity localUser) {
+        return Completable.defer(() -> {
+            if (firebaseUser.getFullName() != null &&
+                    !firebaseUser.getFullName().equals(localUser.getFullName())) {
+                return localDatasource.updateFullName(localUser.getId(), firebaseUser.getFullName())
+                        .flatMapCompletable(result ->
+                                firebaseDatasource.saveUserToFirestore(localUser)
+                                        .onErrorComplete()
+                        );
+            }
+            return firebaseDatasource.saveUserToFirestore(localUser)
+                    .onErrorComplete();
+        }).onErrorComplete();
+    }
+
+    private Single<UserEntity> createLocalUserFromFirebase(UserEntity firebaseUser, String password) {
         return localDatasource.registerUser(
                 firebaseUser.getFullName(),
                 firebaseUser.getEmail(),
@@ -160,253 +117,90 @@ public class AuthRepository {
         );
     }
 
-    private void createFirebaseUserFromLocal(UserEntity localUser, String password) {
-        try {
-            firebaseDatasource.createUserInFirebase(localUser, password);
-        } catch (Exception e) {
+    private Completable createFirebaseUserFromLocal(UserEntity localUser, String password) {
+        return firebaseDatasource.createUserInFirebase(localUser, password)
+                .ignoreElement()
+                .onErrorComplete();
+    }
+
+    public Completable logout() {
+        Completable localLogout = localDatasource.logout();
+
+        if (firebaseDatasource.isNetworkAvailable()) {
+            return localLogout
+                    .andThen(firebaseDatasource.logout().onErrorComplete())
+                    .subscribeOn(Schedulers.io());
         }
+
+        return localLogout.subscribeOn(Schedulers.io());
+    }
+
+    public Completable logoutUser(String userId) {
+        Completable localLogout = localDatasource.logoutUser(userId);
+
+        if (firebaseDatasource.isNetworkAvailable()) {
+            return localLogout
+                    .andThen(firebaseDatasource.logout().onErrorComplete())
+                    .subscribeOn(Schedulers.io());
+        }
+
+        return localLogout.subscribeOn(Schedulers.io());
     }
 
 
-    public void logout(ResultCallback<Boolean> callback) {
-        executorService.execute(() -> {
-            try {
-                boolean result = localDatasource.logout();
-
-                if (firebaseDatasource.isNetworkAvailable()) {
-                    firebaseDatasource.logout();
-                }
-
-                callback.onSuccess(result);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
-
-    public void logoutUser(String userId, ResultCallback<Boolean> callback) {
-        executorService.execute(() -> {
-            try {
-                boolean result = localDatasource.logoutUser(userId);
-
-                if (firebaseDatasource.isNetworkAvailable()) {
-                    firebaseDatasource.logout();
-                }
-
-                callback.onSuccess(result);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
 
 
-    public String getSessionUserId() {
-        return localDatasource.getSessionUserId();
-    }
 
-    public String getSessionUserEmail() {
-        return localDatasource.getSessionUserEmail();
-    }
 
-    public String getSessionUserName() {
-        return localDatasource.getSessionUserName();
-    }
 
     public boolean isSessionLoggedIn() {
         return localDatasource.isSessionLoggedIn();
     }
 
-
-    public void getCurrentUser(ResultCallback<User> callback) {
-        executorService.execute(() -> {
-            try {
-                UserEntity entity = localDatasource.getCurrentUser();
-                User user = UserMapper.toDomain(entity);
-                callback.onSuccess(user);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
-
-    public LiveData<User> getCurrentUserLive() {
-        return Transformations.map(
-                localDatasource.getCurrentUserLive(),
-                UserMapper::toDomain
-        );
-    }
-
-    public void isUserLoggedIn(ResultCallback<Boolean> callback) {
-        executorService.execute(() -> {
-            try {
-                boolean result = localDatasource.isUserLoggedIn();
-                callback.onSuccess(result);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
+    public Single<User> getCurrentUser() {
+        return localDatasource.getCurrentUser()
+                .map(UserMapper::toDomain)
+                .subscribeOn(Schedulers.io());
     }
 
 
-    public void getUserById(String userId, ResultCallback<User> callback) {
-        executorService.execute(() -> {
-            try {
-                UserEntity entity = localDatasource.getUserById(userId);
-                User user = UserMapper.toDomain(entity);
-                callback.onSuccess(user);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
 
-    public LiveData<User> getUserByIdLive(String userId) {
-        return Transformations.map(
-                localDatasource.getUserByIdLive(userId),
-                UserMapper::toDomain
-        );
-    }
 
-    public void getAllUsers(ResultCallback<List<User>> callback) {
-        executorService.execute(() -> {
-            try {
-                List<UserEntity> entities = localDatasource.getAllUsers();
-                List<User> users = UserMapper.toDomainListFromEntities(entities);
-                callback.onSuccess(users);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
 
-    public LiveData<List<User>> getAllUsersLive() {
-        return Transformations.map(
-                localDatasource.getAllUsersLive(),
-                UserMapper::toDomainListFromEntities
-        );
+    public Single<Boolean> isEmailExists(String email) {
+        return localDatasource.isEmailExists(email)
+                .subscribeOn(Schedulers.io());
     }
 
 
-    public void isEmailExists(String email, ResultCallback<Boolean> callback) {
-        executorService.execute(() -> {
-            try {
-                boolean exists = localDatasource.isEmailExists(email);
-                callback.onSuccess(exists);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
 
-    public void validatePassword(String password, ResultCallback<PasswordValidationResult> callback) {
-        executorService.execute(() -> {
-            try {
-                PasswordValidationResult result = localDatasource.validatePassword(password);
-                callback.onSuccess(result);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
+    public Single<Boolean> updateUser(User user) {
+        UserEntity entity = UserMapper.toEntity(user);
 
-
-    public void updateUser(User user, ResultCallback<Boolean> callback) {
-        executorService.execute(() -> {
-            try {
-                UserEntity entity = UserMapper.toEntity(user);
-                boolean result = localDatasource.updateUser(entity);
-
-                if (result && firebaseDatasource.isNetworkAvailable()) {
-                    try {
-                        firebaseDatasource.saveUserToFirestore(entity);
-                    } catch (Exception e) {
+        return localDatasource.updateUser(entity)
+                .flatMap(result -> {
+                    if (result && firebaseDatasource.isNetworkAvailable()) {
+                        return firebaseDatasource.saveUserToFirestore(entity)
+                                .toSingleDefault(true)
+                                .onErrorReturnItem(true);
                     }
-                }
-
-                callback.onSuccess(result);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
-
-    public void updateFullName(String userId, String fullName, ResultCallback<Boolean> callback) {
-        executorService.execute(() -> {
-            try {
-                boolean result = localDatasource.updateFullName(userId, fullName);
-
-                if (result && firebaseDatasource.isNetworkAvailable()) {
-                    try {
-                        UserEntity user = localDatasource.getUserById(userId);
-                        if (user != null) {
-                            user.setPassword(null);
-                            firebaseDatasource.saveUserToFirestore(user);
-                        }
-                    } catch (Exception e) {
-                    }
-                }
-
-                callback.onSuccess(result);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
-
-    public void updatePassword(String userId, String oldPassword, String newPassword, ResultCallback<Boolean> callback) {
-        executorService.execute(() -> {
-            try {
-                boolean result = localDatasource.updatePassword(userId, oldPassword, newPassword);
-                callback.onSuccess(result);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
+                    return Single.just(result);
+                })
+                .subscribeOn(Schedulers.io());
     }
 
 
-    public void deleteUser(String userId, ResultCallback<Boolean> callback) {
-        executorService.execute(() -> {
-            try {
-                boolean result = localDatasource.deleteUserById(userId);
-                callback.onSuccess(result);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
+
+    public Single<Boolean> updatePassword(String userId, String oldPassword, String newPassword) {
+        return localDatasource.updatePassword(userId, oldPassword, newPassword)
+                .subscribeOn(Schedulers.io());
     }
 
-    public void deleteUser(User user, ResultCallback<Boolean> callback) {
-        executorService.execute(() -> {
-            try {
-                UserEntity entity = UserMapper.toEntity(user);
-                boolean result = localDatasource.deleteUser(entity);
-                callback.onSuccess(result);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
-    }
-
-    public void deleteAllUsers(ResultCallback<Boolean> callback) {
-        executorService.execute(() -> {
-            try {
-                boolean result = localDatasource.deleteAllUsers();
-                callback.onSuccess(result);
-            } catch (Exception e) {
-                callback.onError(e);
-            }
-        });
+    public Single<Boolean> deleteUser(User user) {
+        UserEntity entity = UserMapper.toEntity(user);
+        return localDatasource.deleteUser(entity)
+                .subscribeOn(Schedulers.io());
     }
 
 
-    public void shutdown() {
-        if (executorService != null && !executorService.isShutdown()) {
-            executorService.shutdown();
-        }
-    }
-    public boolean isUserLoggedIn() {
-        return localDatasource.isUserLoggedIn();
-    }
 }

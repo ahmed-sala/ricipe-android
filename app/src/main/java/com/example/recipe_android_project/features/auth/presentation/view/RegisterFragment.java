@@ -1,9 +1,8 @@
 package com.example.recipe_android_project.features.auth.presentation.view;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.Editable;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -14,6 +13,8 @@ import android.text.style.ClickableSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -26,6 +27,7 @@ import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.core.ui.AlertDialogHelper;
 import com.example.recipe_android_project.core.ui.LoadingDialog;
 import com.example.recipe_android_project.core.ui.SnackbarHelper;
+import com.example.recipe_android_project.core.utils.PasswordHasher.PasswordStrength;
 import com.example.recipe_android_project.features.auth.presentation.contract.RegisterContract;
 import com.example.recipe_android_project.features.auth.presentation.presenter.RegisterPresenter;
 import com.example.recipe_android_project.features.dashboard.view.DashboardActivity;
@@ -43,11 +45,12 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
     private TextInputLayout nameTil, emailTil, passTil;
     private TextInputEditText nameEt, emailEt, passEt;
 
+    private LinearLayout passwordStrengthLayout;
+    private ProgressBar passwordStrengthBar;
+    private TextView passwordStrengthText;
+
     private RegisterPresenter presenter;
     private LoadingDialog loadingDialog;
-
-    private final Handler emailCheckHandler = new Handler(Looper.getMainLooper());
-    private Runnable emailCheckRunnable;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -86,6 +89,12 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
 
         passTil = view.findViewById(R.id.passTil);
         passEt = view.findViewById(R.id.passEt);
+
+
+        btnRegister.setEnabled(false);
+        if (passwordStrengthLayout != null) {
+            passwordStrengthLayout.setVisibility(View.GONE);
+        }
     }
 
     private void setupBottomText() {
@@ -127,9 +136,9 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
             }
         });
 
-        btnGoogle.setOnClickListener(v -> {
-            showErrorSnackbar("Google Sign-Up coming soon!");
-        });
+        btnGoogle.setOnClickListener(v ->
+                showErrorSnackbar("Google Sign-Up coming soon!")
+        );
 
         btnRegister.setOnClickListener(v -> {
             String name = getTextFromEditText(nameEt);
@@ -143,23 +152,32 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
         nameEt.addTextChangedListener(new SimpleTextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
-                nameTil.setError(null);
+                presenter.onNameChanged(s.toString());
+            }
+        });
+
+        nameEt.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                String name = getTextFromEditText(nameEt);
+                if (!name.isEmpty()) {
+                    presenter.validateName(name);
+                }
             }
         });
 
         emailEt.addTextChangedListener(new SimpleTextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
-                emailTil.setError(null);
+                presenter.onEmailChanged(s.toString());
+            }
+        });
 
-                if (emailCheckRunnable != null) {
-                    emailCheckHandler.removeCallbacks(emailCheckRunnable);
-                }
-
-                String email = s.toString().trim();
-                if (email.length() > 5 && email.contains("@")) {
-                    emailCheckRunnable = () -> presenter.checkEmailExists(email);
-                    emailCheckHandler.postDelayed(emailCheckRunnable, 500);
+        emailEt.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                String email = getTextFromEditText(emailEt);
+                if (!email.isEmpty()) {
+                    presenter.validateEmail(email);
+                    presenter.checkEmailExists(email);
                 }
             }
         });
@@ -167,9 +185,34 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
         passEt.addTextChangedListener(new SimpleTextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
-                passTil.setError(null);
+                String password = s.toString();
+
+                if (passwordStrengthLayout != null) {
+                    passwordStrengthLayout.setVisibility(
+                            password.isEmpty() ? View.GONE : View.VISIBLE
+                    );
+                }
+
+                presenter.onPasswordChanged(password);
             }
         });
+
+        passEt.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                String password = getTextFromEditText(passEt);
+                if (!password.isEmpty()) {
+                    presenter.validatePassword(password);
+                }
+            }
+        });
+    }
+
+    private abstract static class SimpleTextWatcher implements TextWatcher {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {}
     }
 
     private String getTextFromEditText(TextInputEditText editText) {
@@ -190,7 +233,6 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
     }
 
     private void setButtonsEnabled(boolean enabled) {
-        btnRegister.setEnabled(enabled);
         btnGoogle.setEnabled(enabled);
         btnClose.setEnabled(enabled);
     }
@@ -211,10 +253,72 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
     }
 
     @Override
+    public void clearNameError() {
+        nameTil.setError(null);
+    }
+
+    @Override
+    public void clearEmailError() {
+        emailTil.setError(null);
+    }
+
+    @Override
+    public void clearPasswordError() {
+        passTil.setError(null);
+    }
+
+    @Override
     public void clearErrors() {
         nameTil.setError(null);
         emailTil.setError(null);
         passTil.setError(null);
+    }
+
+    @Override
+    public void setRegisterButtonEnabled(boolean enabled) {
+        btnRegister.setEnabled(enabled);
+    }
+
+    @Override
+    public void showPasswordStrengthIndicator(PasswordStrength strength, String message) {
+        if (passwordStrengthLayout == null || passwordStrengthBar == null || passwordStrengthText == null) {
+            return;
+        }
+
+        passwordStrengthLayout.setVisibility(View.VISIBLE);
+
+        int progress;
+        int color;
+
+        switch (strength) {
+            case WEAK:
+                progress = 33;
+                color = ContextCompat.getColor(requireContext(), R.color.error);
+                break;
+            case MEDIUM:
+                progress = 66;
+                color = ContextCompat.getColor(requireContext(), R.color.warning);
+                break;
+            case STRONG:
+                progress = 100;
+                color = ContextCompat.getColor(requireContext(), R.color.success);
+                break;
+            default:
+                progress = 0;
+                color = ContextCompat.getColor(requireContext(), R.color.error);
+        }
+
+        passwordStrengthBar.setProgress(progress);
+        passwordStrengthBar.setProgressTintList(ColorStateList.valueOf(color));
+        passwordStrengthText.setText(message);
+        passwordStrengthText.setTextColor(color);
+    }
+
+    @Override
+    public void hidePasswordStrengthIndicator() {
+        if (passwordStrengthLayout != null) {
+            passwordStrengthLayout.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -255,31 +359,15 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
                 .navigate(R.id.action_registerFragment_to_loginFragment);
     }
 
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-
-        if (emailCheckRunnable != null) {
-            emailCheckHandler.removeCallbacks(emailCheckRunnable);
-        }
 
         if (loadingDialog != null) {
             loadingDialog.dismiss();
         }
         if (presenter != null) {
-            presenter.detachView();
+            presenter.onDestroy();
         }
-    }
-
-
-    private abstract static class SimpleTextWatcher implements TextWatcher {
-        @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-        }
-
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {}
     }
 }
