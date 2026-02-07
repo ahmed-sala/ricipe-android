@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -27,6 +28,7 @@ import com.example.recipe_android_project.features.home.model.Category;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.home.presentation.contract.HomeContract;
 import com.example.recipe_android_project.features.home.presentation.presenter.HomePresenter;
+import com.google.android.material.card.MaterialCardView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +42,10 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
 
     private ImageView imgFeatured;
     private TextView tvFeaturedTitle, tvFeaturedCountry;
+
+    // Add this: Featured card and current meal
+    private MaterialCardView cardFeatured;
+    private Meal currentFeaturedMeal;
 
     private CategoryAdapter categoryAdapter;
     private MealAdapter mealAdapter;
@@ -64,7 +70,11 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
         tvFeaturedTitle = view.findViewById(R.id.tvFeaturedTitle);
         tvFeaturedCountry = view.findViewById(R.id.tvFeaturedCountry);
 
+        // Add this: Find the featured card
+        cardFeatured = view.findViewById(R.id.cardFeatured);
+
         setupRecyclerViews();
+        setupClickListeners();
 
         presenter = new HomePresenter();
         presenter.attachView(this);
@@ -94,6 +104,27 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
         mealAdapter = new MealAdapter(new ArrayList<>(), this);
 
         rvMeals.setAdapter(mealAdapter);
+    }
+
+    // Add this method
+    private void setupClickListeners() {
+        // Featured meal card click listener
+        cardFeatured.setOnClickListener(v -> {
+            navigateToMealDetail(currentFeaturedMeal);
+        });
+    }
+
+    // Add this helper method for navigation
+    private void navigateToMealDetail(Meal meal) {
+        if (meal == null || meal.getId() == null) {
+            Toast.makeText(requireContext(), "Meal not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        HomeFragmentDirections.ActionHomeFragmentToMealDetailFragment action =
+                HomeFragmentDirections.actionHomeFragmentToMealDetailFragment(meal.getId());
+
+        Navigation.findNavController(requireView()).navigate(action);
     }
 
     private void showFeaturedLoading() {
@@ -146,6 +177,9 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
     @Override
     public void showMealOfTheDay(Meal meal) {
         if (meal == null) return;
+
+        // Store the current featured meal for navigation
+        this.currentFeaturedMeal = meal;
 
         tvFeaturedTitle.setText(meal.getName() != null ? meal.getName() : "");
         tvFeaturedCountry.setText(meal.getArea() != null ? meal.getArea().toUpperCase() : "");
@@ -215,9 +249,11 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
 
     @Override
     public void onMealClick(Meal meal, int position) {
+        navigateToMealDetail(meal);
     }
 
     @Override
     public void onFavoriteClick(Meal meal, int position, boolean isFavorite) {
+        // Handle favorite click
     }
 }

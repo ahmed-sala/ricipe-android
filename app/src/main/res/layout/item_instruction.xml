@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="12dp">
+
+    <!-- Step Number Circle -->
+    <TextView
+        android:id="@+id/tvStepNumber"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@drawable/bg_step_number"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif-medium"
+        tools:text="1" />
+
+    <TextView
+        android:id="@+id/tvInstruction"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="16dp"
+        android:layout_weight="1"
+        android:lineSpacingMultiplier="1.5"
+        android:textColor="@color/gray_600"
+        android:textSize="14sp"
+        tools:text="Pan fry the black pepper and garlic over a dry medium heat until fragrant." />
+
+</LinearLayout>

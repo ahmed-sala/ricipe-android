@@ -17,7 +17,6 @@ public class Ingredient implements Serializable {
         this.measure = measure;
     }
 
-    // ==================== HELPER METHODS ====================
 
     public String getFormatted() {
         if (measure == null || measure.trim().isEmpty()) {

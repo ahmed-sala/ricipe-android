@@ -150,6 +150,11 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
         disposables.add(categoryFilterDisposable);
     }
 
+    @Override
+    public void NavigateToMealDetails(Meal meal) {
+
+    }
+
     private String getErrorMessage(Throwable throwable, String defaultMessage) {
         if (throwable == null) {
             return defaultMessage;

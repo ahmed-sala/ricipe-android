@@ -1,6 +1,7 @@
 package com.example.recipe_android_project.core.config;
 
 import com.example.recipe_android_project.features.home.data.datasource.remote.MealApiService;
+import com.example.recipe_android_project.features.meal_detail.data.datasource.remote.MealDetailApiService;
 import com.example.recipe_android_project.features.search.data.datasource.remote.SearchApiService;
 
 import java.util.concurrent.TimeUnit;
@@ -18,6 +19,7 @@ public final class RetrofitClient {
     private static volatile Retrofit retrofit;
     private static volatile MealApiService mealApiService;
     private static volatile SearchApiService searchApiService;
+    private static volatile MealDetailApiService mealDetailApiService;
 
     private RetrofitClient() {
     }
@@ -67,5 +69,15 @@ public final class RetrofitClient {
             }
         }
         return searchApiService;
+    }
+    public static MealDetailApiService getMealDetailApiService() {
+        if (mealDetailApiService == null) {
+            synchronized (RetrofitClient.class) {
+                if (mealDetailApiService == null) {
+                    mealDetailApiService = getInstance().create(MealDetailApiService.class);
+                }
+            }
+        }
+        return mealDetailApiService;
     }
 }
