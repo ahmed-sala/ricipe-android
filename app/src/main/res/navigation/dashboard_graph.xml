@@ -9,7 +9,16 @@
         android:id="@+id/homeFragment"
         android:name="com.example.recipe_android_project.features.home.presentation.view.HomeFragment"
         android:label="Home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home">
+
+        <action
+            android:id="@+id/action_homeFragment_to_mealDetailFragment"
+            app:destination="@id/mealDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
 
     <fragment
         android:id="@+id/searchFragment"
@@ -24,6 +33,14 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+
+        <action
+            android:id="@+id/action_searchFragment_to_mealDetailFragment"
+            app:destination="@id/mealDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <fragment
@@ -32,17 +49,45 @@
         android:label="Filter Results"
         tools:layout="@layout/fragment_filter_result">
 
-        <!-- Safe Args argument with Serializable -->
         <argument
             android:name="filterParams"
             app:argType="com.example.recipe_android_project.features.search.domain.model.FilterParams" />
+
+        <action
+            android:id="@+id/action_filterResultFragment_to_mealDetailFragment"
+            app:destination="@id/mealDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+
+    <!-- Meal Detail Fragment with Safe Args -->
+    <fragment
+        android:id="@+id/mealDetailFragment"
+        android:name="com.example.recipe_android_project.features.meal_detail.presentation.view.MealDetailFragment"
+        android:label="Meal Detail"
+        tools:layout="@layout/fragment_meal_detail">
+
+        <argument
+            android:name="mealId"
+            app:argType="string" />
     </fragment>
 
     <fragment
         android:id="@+id/favouriteFragment"
         android:name="com.example.recipe_android_project.features.favourites.view.FavouriteFragment"
         android:label="Favourites"
-        tools:layout="@layout/fragment_favourite" />
+        tools:layout="@layout/fragment_favourite">
+
+        <action
+            android:id="@+id/action_favouriteFragment_to_mealDetailFragment"
+            app:destination="@id/mealDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
 
     <fragment
         android:id="@+id/planFragment"

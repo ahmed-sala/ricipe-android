@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.rxandroid)
     implementation(libs.adapter.rxjava3)
     implementation(libs.room.rxjava3)
+    implementation(libs.core)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)

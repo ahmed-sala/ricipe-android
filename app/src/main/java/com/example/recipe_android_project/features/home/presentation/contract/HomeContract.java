@@ -23,6 +23,7 @@ public interface HomeContract {
     interface Presenter {
         void loadHome();
         void onCategorySelected(Category category);
+        void NavigateToMealDetails(Meal meal);
         void detach();
     }
 }
