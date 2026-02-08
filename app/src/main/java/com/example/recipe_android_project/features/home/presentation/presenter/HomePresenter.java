@@ -1,14 +1,14 @@
 package com.example.recipe_android_project.features.home.presentation.presenter;
 
+import android.content.Context;
+
 import com.example.recipe_android_project.core.helper.BasePresenter;
 import com.example.recipe_android_project.features.home.data.repository.HomeRepository;
 import com.example.recipe_android_project.features.home.model.Category;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.home.presentation.contract.HomeContract;
 
-import java.util.List;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -25,16 +25,13 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
     private Disposable mealsDisposable;
     private Disposable mealOfDayDisposable;
     private Disposable categoryFilterDisposable;
+    private Disposable favoriteDisposable;
 
     private final AtomicInteger completedRequests = new AtomicInteger(0);
     private static final int TOTAL_INITIAL_REQUESTS = 2;
 
-    public HomePresenter() {
-        this.repository = new HomeRepository();
-    }
-
-    public HomePresenter(HomeRepository repository) {
-        this.repository = repository;
+    public HomePresenter(Context context) {
+        this.repository = new HomeRepository(context);
     }
 
     private String randomLetter() {
@@ -57,7 +54,7 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
     }
 
     private void loadMealOfTheDay() {
-        mealOfDayDisposable = repository.getMealOfTheDay()
+        mealOfDayDisposable = repository.getMealOfTheDayWithFavoriteStatus()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -98,7 +95,7 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
     }
 
     private void loadMealsByRandomLetter() {
-        mealsDisposable = repository.getMealsByFirstLetter(randomLetter())
+        mealsDisposable = repository.getMealsByFirstLetterWithFavoriteStatus(randomLetter())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -132,7 +129,7 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
 
         cancelCategoryFilter();
 
-        categoryFilterDisposable = repository.getMealsByCategory(category.getName())
+        categoryFilterDisposable = repository.getMealsByCategoryWithFavoriteStatus(category.getName())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -151,8 +148,70 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
     }
 
     @Override
-    public void NavigateToMealDetails(Meal meal) {
+    public void addToFavorites(Meal meal) {
+        if (!isViewAttached() || meal == null) return;
 
+        if (!isUserLoggedIn()) {
+            getView().showLoginRequired();
+            return;
+        }
+
+        cancelFavoriteRequest();
+
+        favoriteDisposable = repository.addToFavorites(meal)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            if (isViewAttached()) {
+                                meal.setFavorite(true);
+                                getView().onFavoriteAdded(meal);
+                                getView().updateMealFavoriteStatus(meal, true);
+                            }
+                        },
+                        throwable -> {
+                            if (isViewAttached()) {
+                                getView().onFavoriteError(getErrorMessage(throwable, "Failed to add favorite"));
+                            }
+                        }
+                );
+        disposables.add(favoriteDisposable);
+    }
+
+    @Override
+    public void removeFromFavorites(Meal meal) {
+        if (!isViewAttached() || meal == null) return;
+
+        if (!isUserLoggedIn()) {
+            getView().showLoginRequired();
+            return;
+        }
+
+        cancelFavoriteRequest();
+
+        favoriteDisposable = repository.removeFromFavorites(meal)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            if (isViewAttached()) {
+                                meal.setFavorite(false);
+                                getView().onFavoriteRemoved(meal);
+                                getView().updateMealFavoriteStatus(meal, false);
+                            }
+                        },
+                        throwable -> {
+                            if (isViewAttached()) {
+                                getView().onFavoriteError(getErrorMessage(throwable, "Failed to remove favorite"));
+                            }
+                        }
+                );
+        disposables.add(favoriteDisposable);
+    }
+
+    @Override
+    public boolean isUserLoggedIn() {
+        return repository.isUserAuthenticated();
     }
 
     private String getErrorMessage(Throwable throwable, String defaultMessage) {
@@ -176,6 +235,12 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
         return message;
     }
 
+    private void cancelFavoriteRequest() {
+        if (favoriteDisposable != null && !favoriteDisposable.isDisposed()) {
+            favoriteDisposable.dispose();
+        }
+    }
+
     private void cancelCategoryFilter() {
         if (categoryFilterDisposable != null && !categoryFilterDisposable.isDisposed()) {
             categoryFilterDisposable.dispose();
@@ -193,6 +258,7 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
             mealsDisposable.dispose();
         }
         cancelCategoryFilter();
+        cancelFavoriteRequest();
     }
 
     @Override

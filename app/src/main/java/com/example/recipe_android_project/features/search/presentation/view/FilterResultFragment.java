@@ -6,7 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,6 +17,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.airbnb.lottie.LottieAnimationView;
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.ui.AlertDialogHelper;
+import com.example.recipe_android_project.core.ui.SnackbarHelper;
 import com.example.recipe_android_project.features.search.data.repository.SearchRepository;
 import com.example.recipe_android_project.features.search.domain.model.FilterParams;
 import com.example.recipe_android_project.features.search.domain.model.FilterResult;
@@ -95,7 +96,7 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
 
             @Override
             public void onFavoriteClick(FilterResult filterResult, int position, boolean isFavorite) {
-                presenter.onFavoriteClicked(filterResult, isFavorite);
+                handleFavoriteClick(filterResult, isFavorite);
             }
         });
 
@@ -110,7 +111,7 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
     }
 
     private void setupPresenter() {
-        SearchRepository repository = new SearchRepository();
+        SearchRepository repository = new SearchRepository(requireContext());
         presenter = new FilterResultPresenter(repository);
         presenter.attachView(this);
     }
@@ -121,6 +122,39 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
         } else {
             showError("Invalid filter parameters");
         }
+    }
+    private void handleFavoriteClick(FilterResult filterResult, boolean currentlyFavorite) {
+        if (filterResult == null) return;
+
+        if (!presenter.isUserLoggedIn()) {
+            showLoginRequired();
+            return;
+        }
+
+        if (currentlyFavorite) {
+            showRemoveFavoriteDialog(filterResult);
+        } else {
+            presenter.addToFavorites(filterResult);
+        }
+    }
+    private void showRemoveFavoriteDialog(FilterResult filterResult) {
+        String mealName = filterResult.getName() != null ? filterResult.getName() : "this meal";
+
+        AlertDialogHelper.showRemoveFavoriteDialog(
+                requireContext(),
+                mealName,
+                new AlertDialogHelper.OnConfirmDialogListener() {
+                    @Override
+                    public void onConfirm() {
+                        presenter.removeFromFavorites(filterResult);
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        adapter.updateFavoriteStatus(filterResult.getId(), true);
+                    }
+                }
+        );
     }
 
     @Override
@@ -156,12 +190,9 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
 
     @Override
     public void showError(String message) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void setToolbarTitle(String title) {
-        toolbar.setTitle(title);
+        if (getView() != null) {
+            SnackbarHelper.showError(getView(), message);
+        }
     }
 
     @Override
@@ -171,9 +202,52 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
     }
 
     @Override
-    public void navigateToMealDetail(int mealId) {
-        Toast.makeText(requireContext(), "Navigate to meal: " + mealId, Toast.LENGTH_SHORT).show();
+    public void navigateToMealDetail(String mealId) {
+        if (mealId == null) return;
+
+        FilterResultFragmentDirections.ActionFilterResultFragmentToMealDetailFragment action =
+                FilterResultFragmentDirections.actionFilterResultFragmentToMealDetailFragment(mealId);
+
+        NavController navController = Navigation.findNavController(requireView());
+        navController.navigate(action);
     }
+
+
+    @Override
+    public void onFavoriteAdded(FilterResult filterResult) {
+        if (getView() != null) {
+            SnackbarHelper.showSuccess(getView(), getString(R.string.added_to_favorites));
+        }
+    }
+
+    @Override
+    public void onFavoriteRemoved(FilterResult filterResult) {
+        if (getView() != null) {
+            SnackbarHelper.showSuccess(getView(), getString(R.string.removed_from_favorites));
+        }
+    }
+
+    @Override
+    public void onFavoriteError(String message) {
+        if (getView() != null) {
+            SnackbarHelper.showError(getView(), message);
+        }
+    }
+
+    @Override
+    public void updateFilterResultFavoriteStatus(int mealId, boolean isFavorite) {
+        adapter.updateFavoriteStatus(mealId, isFavorite);
+    }
+
+    @Override
+    public void showLoginRequired() {
+        if (getView() != null) {
+            SnackbarHelper.showWarning(getView(), getString(R.string.login_required));
+        }
+    }
+
+
+
 
     @Override
     public void onDestroyView() {

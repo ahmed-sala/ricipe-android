@@ -1,9 +1,11 @@
 package com.example.recipe_android_project.features.meal_detail.presentation.presenter;
 
+import android.content.Context;
+
 import com.example.recipe_android_project.core.helper.BasePresenter;
 import com.example.recipe_android_project.core.utils.InstructionParser;
 import com.example.recipe_android_project.features.home.model.Meal;
-import com.example.recipe_android_project.features.meal_detail.data.datasource.repository.MealDetailRepository;
+import com.example.recipe_android_project.features.meal_detail.data.repository.MealDetailRepository;
 import com.example.recipe_android_project.features.meal_detail.domain.model.InstructionStep;
 import com.example.recipe_android_project.features.meal_detail.presentation.contract.MealDetailContract;
 
@@ -14,7 +16,8 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
-public class MealDetailPresenter extends BasePresenter<MealDetailContract.View> implements MealDetailContract.Presenter {
+public class MealDetailPresenter extends BasePresenter<MealDetailContract.View>
+        implements MealDetailContract.Presenter {
 
     private final MealDetailRepository repository;
     private final CompositeDisposable disposables = new CompositeDisposable();
@@ -25,8 +28,8 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View> 
     private Meal currentMeal;
     private boolean isFavorite = false;
 
-    public MealDetailPresenter() {
-        this.repository = new MealDetailRepository();
+    public MealDetailPresenter(Context context) {
+        this.repository = new MealDetailRepository(context);
     }
 
     public MealDetailPresenter(MealDetailRepository repository) {
@@ -46,7 +49,8 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View> 
 
         getView().showScreenLoading();
 
-        mealDetailDisposable = repository.getMealById(mealId)
+        // Load meal with favorite status
+        mealDetailDisposable = repository.getMealByIdWithFavoriteStatus(mealId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -63,7 +67,8 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View> 
                                     getView().showIngredients(meal.getIngredients());
                                 }
 
-                                List<InstructionStep> instructions = InstructionParser.parseInstructions(meal.getInstructions());
+                                List<InstructionStep> instructions =
+                                        InstructionParser.parseInstructions(meal.getInstructions());
                                 getView().showInstructions(instructions);
 
                                 if (meal.hasYoutubeVideo()) {
@@ -83,17 +88,116 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View> 
         disposables.add(mealDetailDisposable);
     }
 
+    // ==================== FAVORITE METHODS ====================
+
     @Override
     public void onFavoriteClicked() {
         if (!isViewAttached() || currentMeal == null) return;
 
-        isFavorite = !isFavorite;
-        currentMeal.setFavorite(isFavorite);
+        if (!isUserLoggedIn()) {
+            getView().showLoginRequired();
+            return;
+        }
 
-        getView().updateFavoriteStatus(isFavorite);
-        getView().showFavoriteSuccess(isFavorite);
-
+        if (isFavorite) {
+            // Show confirmation dialog before removing
+            getView().showRemoveFavoriteConfirmation(currentMeal);
+        } else {
+            // Add to favorites directly
+            addToFavorites();
+        }
     }
+
+    @Override
+    public void addToFavorites() {
+        if (!isViewAttached() || currentMeal == null) return;
+
+        if (!isUserLoggedIn()) {
+            getView().showLoginRequired();
+            return;
+        }
+
+        cancelFavoriteRequest();
+
+        getView().showFavoriteLoading();
+
+        favoriteDisposable = repository.addToFavorites(currentMeal)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            if (isViewAttached()) {
+                                isFavorite = true;
+                                currentMeal.setFavorite(true);
+
+                                getView().hideFavoriteLoading();
+                                getView().updateFavoriteStatus(true);
+                                getView().showFavoriteSuccess(true);
+                            }
+                        },
+                        throwable -> {
+                            if (isViewAttached()) {
+                                getView().hideFavoriteLoading();
+                                getView().showFavoriteError(
+                                        getErrorMessage(throwable, "Failed to add to favorites")
+                                );
+                            }
+                        }
+                );
+        disposables.add(favoriteDisposable);
+    }
+
+    @Override
+    public void removeFromFavorites() {
+        if (!isViewAttached() || currentMeal == null) return;
+
+        if (!isUserLoggedIn()) {
+            getView().showLoginRequired();
+            return;
+        }
+
+        cancelFavoriteRequest();
+
+        getView().showFavoriteLoading();
+
+        favoriteDisposable = repository.removeFromFavorites(currentMeal)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            if (isViewAttached()) {
+                                isFavorite = false;
+                                currentMeal.setFavorite(false);
+
+                                getView().hideFavoriteLoading();
+                                getView().updateFavoriteStatus(false);
+                                getView().showFavoriteSuccess(false);
+                            }
+                        },
+                        throwable -> {
+                            if (isViewAttached()) {
+                                getView().hideFavoriteLoading();
+                                getView().showFavoriteError(
+                                        getErrorMessage(throwable, "Failed to remove from favorites")
+                                );
+                            }
+                        }
+                );
+        disposables.add(favoriteDisposable);
+    }
+
+    @Override
+    public void confirmRemoveFromFavorites() {
+        // Called when user confirms removal in dialog
+        removeFromFavorites();
+    }
+
+    @Override
+    public boolean isUserLoggedIn() {
+        return repository.isUserAuthenticated();
+    }
+
+    // ==================== OTHER METHODS ====================
 
     @Override
     public void onBackClicked() {
@@ -104,14 +208,16 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View> 
 
     @Override
     public void onYoutubeVideoClicked() {
+        // Handle YouTube video click if needed
     }
 
     @Override
     public void onAddToWeeklyPlanClicked() {
         if (!isViewAttached() || currentMeal == null) return;
-
-
+        // TODO: Implement weekly plan feature
     }
+
+    // ==================== HELPER METHODS ====================
 
     private String getErrorMessage(Throwable throwable, String defaultMessage) {
         if (throwable == null) {
@@ -161,6 +267,8 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View> 
         cancelAllRequests();
         disposables.clear();
     }
+
+    // ==================== GETTERS ====================
 
     public Meal getCurrentMeal() {
         return currentMeal;

@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -28,6 +29,12 @@ import java.util.Set;
 
 public class FilterResultAdapter extends RecyclerView.Adapter<FilterResultAdapter.VH> {
 
+    // Colors for favorite button states
+    private static final int COLOR_FAVORITE_BG = 0xFFE27036;
+    private static final int COLOR_UNFAVORITE_BG = 0xFFFFF5F0;
+    private static final int COLOR_FAVORITE_ICON = 0xFFFFFFFF;
+    private static final int COLOR_UNFAVORITE_ICON = 0xFFE27036;
+
     public interface OnFilterResultClickListener {
         void onMealClick(FilterResult filterResult, int position);
         void onFavoriteClick(FilterResult filterResult, int position, boolean isFavorite);
@@ -35,6 +42,7 @@ public class FilterResultAdapter extends RecyclerView.Adapter<FilterResultAdapte
 
     private List<FilterResult> items = new ArrayList<>();
     private final Set<Integer> favoriteIds = new HashSet<>();
+    private final Set<Integer> loadingIds = new HashSet<>();
     private final OnFilterResultClickListener listener;
     private String filterTag = "";
 
@@ -50,15 +58,6 @@ public class FilterResultAdapter extends RecyclerView.Adapter<FilterResultAdapte
     public void setFilterTag(String filterTag) {
         this.filterTag = filterTag != null ? filterTag : "";
     }
-
-    public void setFavoriteIds(Set<Integer> ids) {
-        favoriteIds.clear();
-        if (ids != null) {
-            favoriteIds.addAll(ids);
-        }
-        notifyDataSetChanged();
-    }
-
     public void updateFavoriteStatus(int mealId, boolean isFavorite) {
         if (isFavorite) {
             favoriteIds.add(mealId);
@@ -68,12 +67,32 @@ public class FilterResultAdapter extends RecyclerView.Adapter<FilterResultAdapte
 
         for (int i = 0; i < items.size(); i++) {
             if (items.get(i).getId() == mealId) {
-                notifyItemChanged(i);
+                notifyItemChanged(i, "favorite");
                 break;
             }
         }
     }
-
+    public boolean isFavorite(int mealId) {
+        return favoriteIds.contains(mealId);
+    }
+    public void showLoading(int mealId) {
+        loadingIds.add(mealId);
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).getId() == mealId) {
+                notifyItemChanged(i, "loading");
+                break;
+            }
+        }
+    }
+    public void hideLoading(int mealId) {
+        loadingIds.remove(mealId);
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).getId() == mealId) {
+                notifyItemChanged(i, "loading");
+                break;
+            }
+        }
+    }
     @NonNull
     @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -86,7 +105,8 @@ public class FilterResultAdapter extends RecyclerView.Adapter<FilterResultAdapte
     public void onBindViewHolder(@NonNull VH holder, int position) {
         FilterResult item = items.get(position);
 
-        holder.tvTitle.setText(item.getName());
+        holder.tvTitle.setText(item.getName() != null ? item.getName() : "");
+
         holder.tvFilterTag.setText(filterTag.toUpperCase());
 
         holder.imgLoader.setVisibility(View.VISIBLE);
@@ -123,32 +143,61 @@ public class FilterResultAdapter extends RecyclerView.Adapter<FilterResultAdapte
         boolean isFavorite = favoriteIds.contains(item.getId());
         updateFavoriteIcon(holder, isFavorite);
 
+        boolean isLoading = loadingIds.contains(item.getId());
+        updateLoadingState(holder, isLoading);
+
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onMealClick(item, position);
+            if (listener != null) {
+                listener.onMealClick(item, holder.getAdapterPosition());
+            }
         });
 
         holder.btnFavorite.setOnClickListener(v -> {
-            boolean newState = !favoriteIds.contains(item.getId());
-            if (newState) {
-                favoriteIds.add(item.getId());
-            } else {
-                favoriteIds.remove(item.getId());
+            if (listener != null && !loadingIds.contains(item.getId())) {
+                int adapterPosition = holder.getAdapterPosition();
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    boolean currentlyFavorite = favoriteIds.contains(item.getId());
+                    listener.onFavoriteClick(item, adapterPosition, currentlyFavorite);
+                }
             }
-            updateFavoriteIcon(holder, newState);
-
-            if (listener != null) listener.onFavoriteClick(item, position, newState);
         });
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull VH holder, int position, @NonNull List<Object> payloads) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position);
+        } else {
+            FilterResult item = items.get(position);
+            for (Object payload : payloads) {
+                if ("favorite".equals(payload)) {
+                    boolean isFavorite = favoriteIds.contains(item.getId());
+                    updateFavoriteIcon(holder, isFavorite);
+                } else if ("loading".equals(payload)) {
+                    boolean isLoading = loadingIds.contains(item.getId());
+                    updateLoadingState(holder, isLoading);
+                }
+            }
+        }
     }
 
     private void updateFavoriteIcon(VH holder, boolean isFavorite) {
         if (isFavorite) {
             holder.icFavorite.setImageResource(R.drawable.favorite_icon);
-            holder.btnFavorite.setCardBackgroundColor(0xFFFF7A1A);
-            holder.icFavorite.setColorFilter(0xFFFFFFFF);
+            holder.btnFavorite.setCardBackgroundColor(COLOR_FAVORITE_BG);
+            holder.icFavorite.setColorFilter(COLOR_FAVORITE_ICON);
         } else {
             holder.icFavorite.setImageResource(R.drawable.ic_favorite_border);
-            holder.btnFavorite.setCardBackgroundColor(0xFFFFF5F0);
-            holder.icFavorite.setColorFilter(0xFFFF7A1A);
+            holder.btnFavorite.setCardBackgroundColor(COLOR_UNFAVORITE_BG);
+            holder.icFavorite.setColorFilter(COLOR_UNFAVORITE_ICON);
+        }
+    }
+
+    private void updateLoadingState(VH holder, boolean isLoading) {
+        if (holder.favoriteLoading != null) {
+            holder.favoriteLoading.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            holder.icFavorite.setVisibility(isLoading ? View.INVISIBLE : View.VISIBLE);
+            holder.btnFavorite.setEnabled(!isLoading);
         }
     }
 
@@ -170,6 +219,7 @@ public class FilterResultAdapter extends RecyclerView.Adapter<FilterResultAdapte
         TextView tvTitle, tvFilterTag;
         MaterialCardView btnFavorite;
         LottieAnimationView imgLoader;
+        ProgressBar favoriteLoading;
 
         VH(@NonNull View itemView) {
             super(itemView);

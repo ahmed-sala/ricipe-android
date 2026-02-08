@@ -4,19 +4,39 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.ForeignKey;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
+
+import com.example.recipe_android_project.features.auth.data.entities.UserEntity;
 
 import java.io.Serializable;
 
-@Entity(tableName = "favMeals")
-public class MealEntity implements Serializable {
+@Entity(
+        tableName = "favorite_meals",
+        primaryKeys = {"meal_id", "user_id"},
+        indices = {
+                @Index(value = "user_id"),
+                @Index(value = "meal_id")
+        },
+        foreignKeys = @ForeignKey(
+                entity = UserEntity.class,
+                parentColumns = "id",
+                childColumns = "user_id",
+                onDelete = ForeignKey.CASCADE
+        )
+)
+public class FavoriteMealEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @PrimaryKey
     @NonNull
-    @ColumnInfo(name = "id")
-    private String id;
+    @ColumnInfo(name = "meal_id")
+    private String mealId;
+
+    @NonNull
+    @ColumnInfo(name = "user_id")
+    private String userId;
 
     @Nullable
     @ColumnInfo(name = "name")
@@ -70,28 +90,41 @@ public class MealEntity implements Serializable {
     @ColumnInfo(name = "ingredients_json")
     private String ingredientsJson;
 
-    @ColumnInfo(name = "is_favorite", defaultValue = "0")
-    private boolean isFavorite;
-
     @ColumnInfo(name = "created_at")
     private long createdAt;
 
     // ==================== CONSTRUCTOR ====================
 
-    public MealEntity() {
-        this.id = "";
+    public FavoriteMealEntity() {
+        this.mealId = "";
+        this.userId = "";
+        this.createdAt = System.currentTimeMillis();
+    }
+
+    public FavoriteMealEntity(@NonNull String mealId, @NonNull String userId) {
+        this.mealId = mealId;
+        this.userId = userId;
         this.createdAt = System.currentTimeMillis();
     }
 
     // ==================== GETTERS & SETTERS ====================
 
     @NonNull
-    public String getId() {
-        return id;
+    public String getMealId() {
+        return mealId;
     }
 
-    public void setId(@NonNull String id) {
-        this.id = id;
+    public void setMealId(@NonNull String mealId) {
+        this.mealId = mealId;
+    }
+
+    @NonNull
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(@NonNull String userId) {
+        this.userId = userId;
     }
 
     @Nullable
@@ -209,14 +242,6 @@ public class MealEntity implements Serializable {
 
     public void setIngredientsJson(@Nullable String ingredientsJson) {
         this.ingredientsJson = ingredientsJson;
-    }
-
-    public boolean isFavorite() {
-        return isFavorite;
-    }
-
-    public void setFavorite(boolean favorite) {
-        isFavorite = favorite;
     }
 
     public long getCreatedAt() {

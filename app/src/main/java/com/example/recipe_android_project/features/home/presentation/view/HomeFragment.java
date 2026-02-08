@@ -24,6 +24,8 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.core.listeners.OnMealClickListener;
+import com.example.recipe_android_project.core.ui.AlertDialogHelper;
+import com.example.recipe_android_project.core.ui.SnackbarHelper;
 import com.example.recipe_android_project.features.home.model.Category;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.home.presentation.contract.HomeContract;
@@ -43,8 +45,10 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
     private ImageView imgFeatured;
     private TextView tvFeaturedTitle, tvFeaturedCountry;
 
-    // Add this: Featured card and current meal
     private MaterialCardView cardFeatured;
+    private MaterialCardView btnFeaturedFavorite;
+    private ImageView icFeaturedFavorite;
+
     private Meal currentFeaturedMeal;
 
     private CategoryAdapter categoryAdapter;
@@ -60,23 +64,11 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
 
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
-        rvCategories = view.findViewById(R.id.rvCategories);
-        rvMeals = view.findViewById(R.id.rvMeals);
-
-        lottieScreenLoading = view.findViewById(R.id.lottieScreenLoading);
-        lottieFeaturedLoading = view.findViewById(R.id.lottieFeaturedLoading);
-
-        imgFeatured = view.findViewById(R.id.imgFeatured);
-        tvFeaturedTitle = view.findViewById(R.id.tvFeaturedTitle);
-        tvFeaturedCountry = view.findViewById(R.id.tvFeaturedCountry);
-
-        // Add this: Find the featured card
-        cardFeatured = view.findViewById(R.id.cardFeatured);
-
+        initViews(view);
         setupRecyclerViews();
         setupClickListeners();
 
-        presenter = new HomePresenter();
+        presenter = new HomePresenter(requireContext());
         presenter.attachView(this);
 
         showScreenLoading();
@@ -87,34 +79,83 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
         return view;
     }
 
+    private void initViews(View view) {
+        rvCategories = view.findViewById(R.id.rvCategories);
+        rvMeals = view.findViewById(R.id.rvMeals);
+
+        lottieScreenLoading = view.findViewById(R.id.lottieScreenLoading);
+        lottieFeaturedLoading = view.findViewById(R.id.lottieFeaturedLoading);
+
+        imgFeatured = view.findViewById(R.id.imgFeatured);
+        tvFeaturedTitle = view.findViewById(R.id.tvFeaturedTitle);
+        tvFeaturedCountry = view.findViewById(R.id.tvFeaturedCountry);
+
+        cardFeatured = view.findViewById(R.id.cardFeatured);
+        btnFeaturedFavorite = view.findViewById(R.id.btnFavorite);
+        icFeaturedFavorite = view.findViewById(R.id.icFavorite);
+    }
+
     private void setupRecyclerViews() {
         rvCategories.setLayoutManager(
                 new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         );
-
         categoryAdapter = new CategoryAdapter(new ArrayList<>(), (item, position) -> {
             presenter.onCategorySelected(item);
         });
-
         rvCategories.setAdapter(categoryAdapter);
 
         rvMeals.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvMeals.setNestedScrollingEnabled(false);
-
         mealAdapter = new MealAdapter(new ArrayList<>(), this);
-
         rvMeals.setAdapter(mealAdapter);
     }
 
-    // Add this method
     private void setupClickListeners() {
-        // Featured meal card click listener
         cardFeatured.setOnClickListener(v -> {
             navigateToMealDetail(currentFeaturedMeal);
         });
+
+        btnFeaturedFavorite.setOnClickListener(v -> {
+            if (currentFeaturedMeal != null) {
+                handleFavoriteClick(currentFeaturedMeal);
+            }
+        });
     }
 
-    // Add this helper method for navigation
+    private void handleFavoriteClick(Meal meal) {
+        if (meal == null) return;
+
+        if (!presenter.isUserLoggedIn()) {
+            showLoginRequired();
+            return;
+        }
+
+        if (meal.isFavorite()) {
+            showRemoveFavoriteDialog(meal);
+        } else {
+            presenter.addToFavorites(meal);
+        }
+    }
+
+    private void showRemoveFavoriteDialog(Meal meal) {
+        String mealName = meal.getName() != null ? meal.getName() : "this meal";
+
+        AlertDialogHelper.showRemoveFavoriteDialog(
+                requireContext(),
+                mealName,
+                new AlertDialogHelper.OnConfirmDialogListener() {
+                    @Override
+                    public void onConfirm() {
+                        presenter.removeFromFavorites(meal);
+                    }
+
+                    @Override
+                    public void onCancel() {
+                    }
+                }
+        );
+    }
+
     private void navigateToMealDetail(Meal meal) {
         if (meal == null || meal.getId() == null) {
             Toast.makeText(requireContext(), "Meal not available", Toast.LENGTH_SHORT).show();
@@ -126,7 +167,6 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
 
         Navigation.findNavController(requireView()).navigate(action);
     }
-
     private void showFeaturedLoading() {
         if (lottieFeaturedLoading != null) {
             lottieFeaturedLoading.setVisibility(View.VISIBLE);
@@ -135,7 +175,6 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
 
         tvFeaturedTitle.setVisibility(View.GONE);
         tvFeaturedCountry.setVisibility(View.GONE);
-
         tvFeaturedTitle.setText("");
         tvFeaturedCountry.setText("");
         imgFeatured.setImageDrawable(null);
@@ -147,6 +186,21 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
             lottieFeaturedLoading.setVisibility(View.GONE);
         }
     }
+
+    private void updateFeaturedFavoriteIcon(boolean isFavorite) {
+        if (icFeaturedFavorite == null || btnFeaturedFavorite == null) return;
+
+        if (isFavorite) {
+            icFeaturedFavorite.setImageResource(R.drawable.favorite_icon);
+            icFeaturedFavorite.setColorFilter(0xFFFFFFFF); // White
+            btnFeaturedFavorite.setCardBackgroundColor(0xFFFF7A1A); // Orange
+        } else {
+            icFeaturedFavorite.setImageResource(R.drawable.ic_favorite_border);
+            icFeaturedFavorite.setColorFilter(0xFFFFFFFF); // White
+            btnFeaturedFavorite.setCardBackgroundColor(0x40FFFFFF); // Semi-transparent white
+        }
+    }
+
 
     @Override
     public void showScreenLoading() {
@@ -178,7 +232,6 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
     public void showMealOfTheDay(Meal meal) {
         if (meal == null) return;
 
-        // Store the current featured meal for navigation
         this.currentFeaturedMeal = meal;
 
         tvFeaturedTitle.setText(meal.getName() != null ? meal.getName() : "");
@@ -186,6 +239,8 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
 
         tvFeaturedTitle.setVisibility(View.VISIBLE);
         tvFeaturedCountry.setVisibility(View.VISIBLE);
+
+        updateFeaturedFavoriteIcon(meal.isFavorite());
 
         if (lottieFeaturedLoading != null) {
             lottieFeaturedLoading.setVisibility(View.VISIBLE);
@@ -221,13 +276,75 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
 
     @Override
     public void showError(String message) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+        if (getView() != null) {
+            SnackbarHelper.showError(getView(), message);
+        }
     }
 
     @Override
     public void onHomeLoaded() {
         hideScreenLoading();
     }
+
+    @Override
+    public void hideMealOfDayLoading() {
+        hideFeaturedLoading();
+    }
+
+
+    @Override
+    public void onFavoriteAdded(Meal meal) {
+        if (getView() != null) {
+            SnackbarHelper.showSuccess(getView(), getString(R.string.added_to_favorites));
+        }
+    }
+
+    @Override
+    public void onFavoriteRemoved(Meal meal) {
+        if (getView() != null) {
+            SnackbarHelper.showSuccess(getView(), getString(R.string.removed_from_favorites));
+        }
+    }
+
+    @Override
+    public void onFavoriteError(String message) {
+        if (getView() != null) {
+            SnackbarHelper.showError(getView(), message);
+        }
+    }
+
+    @Override
+    public void updateMealFavoriteStatus(Meal meal, boolean isFavorite) {
+        if (meal == null) return;
+
+        if (currentFeaturedMeal != null && currentFeaturedMeal.getId().equals(meal.getId())) {
+            currentFeaturedMeal.setFavorite(isFavorite);
+            updateFeaturedFavoriteIcon(isFavorite);
+        }
+
+        mealAdapter.updateMealFavoriteStatus(meal.getId(), isFavorite);
+    }
+
+    @Override
+    public void showLoginRequired() {
+        if (getView() != null) {
+            SnackbarHelper.showWarning(getView(), getString(R.string.login_required));
+        }
+
+
+    }
+
+
+    @Override
+    public void onMealClick(Meal meal, int position) {
+        navigateToMealDetail(meal);
+    }
+
+    @Override
+    public void onFavoriteClick(Meal meal, int position, boolean currentlyFavorite) {
+        handleFavoriteClick(meal);
+    }
+
 
     @Override
     public void onDestroyView() {
@@ -240,20 +357,5 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
         if (presenter != null) {
             presenter.detach();
         }
-    }
-
-    @Override
-    public void hideMealOfDayLoading() {
-        hideFeaturedLoading();
-    }
-
-    @Override
-    public void onMealClick(Meal meal, int position) {
-        navigateToMealDetail(meal);
-    }
-
-    @Override
-    public void onFavoriteClick(Meal meal, int position, boolean isFavorite) {
-        // Handle favorite click
     }
 }

@@ -6,12 +6,16 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
 import com.example.recipe_android_project.features.auth.data.entities.UserEntity;
+import com.example.recipe_android_project.features.home.data.entities.FavoriteMealEntity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.WriteBatch;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.reactivex.rxjava3.core.Completable;
@@ -20,6 +24,7 @@ import io.reactivex.rxjava3.core.Single;
 
 public class AuthRemoteDatasource {
     private static final String USERS_COLLECTION = "users";
+    private static final String FAVORITES_COLLECTION = "favorites";
 
     private final FirebaseAuth firebaseAuth;
     private final FirebaseFirestore firestore;
@@ -39,6 +44,7 @@ public class AuthRemoteDatasource {
         }
         return false;
     }
+
 
     @SuppressLint("CheckResult")
     public Single<UserEntity> registerUser(String fullName, String email, String password) {
@@ -169,8 +175,6 @@ public class AuthRemoteDatasource {
         });
     }
 
-
-
     private UserEntity documentToUserEntity(DocumentSnapshot doc) {
         UserEntity user = new UserEntity();
         user.setId(doc.getString("id") != null ? doc.getString("id") : doc.getId());
@@ -181,14 +185,66 @@ public class AuthRemoteDatasource {
         user.setUpdatedAt(doc.getLong("updatedAt") != null ? doc.getLong("updatedAt") : System.currentTimeMillis());
         return user;
     }
-
     public Completable logout() {
         return Completable.fromAction(() -> firebaseAuth.signOut());
     }
-
-
-
     public Single<Boolean> isLoggedIn() {
         return Single.fromCallable(() -> firebaseAuth.getCurrentUser() != null);
+    }
+    public Single<List<FavoriteMealEntity>> getFavoritesFromFirestore(String userId) {
+        return Single.create(emitter -> {
+            if (userId == null || userId.isEmpty()) {
+                emitter.onSuccess(new ArrayList<>());
+                return;
+            }
+
+            firestore.collection(USERS_COLLECTION)
+                    .document(userId)
+                    .collection(FAVORITES_COLLECTION)
+                    .get()
+                    .addOnSuccessListener(querySnapshot -> {
+                        List<FavoriteMealEntity> favorites = new ArrayList<>();
+                        for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                            FavoriteMealEntity entity = documentToFavoriteEntity(doc, userId);
+                            if (entity != null) {
+                                favorites.add(entity);
+                            }
+                        }
+                        emitter.onSuccess(favorites);
+                    })
+                    .addOnFailureListener(e -> emitter.onSuccess(new ArrayList<>()));
+        });
+    }
+    private FavoriteMealEntity documentToFavoriteEntity(DocumentSnapshot doc, String userId) {
+        if (doc == null || !doc.exists()) {
+            return null;
+        }
+
+        FavoriteMealEntity entity = new FavoriteMealEntity();
+
+        String mealId = doc.getString("mealId");
+        if (mealId == null || mealId.isEmpty()) {
+            mealId = doc.getId();
+        }
+        entity.setMealId(mealId);
+        entity.setUserId(userId);
+        entity.setName(doc.getString("name"));
+        entity.setAlternateName(doc.getString("alternateName"));
+        entity.setCategory(doc.getString("category"));
+        entity.setArea(doc.getString("area"));
+        entity.setInstructions(doc.getString("instructions"));
+        entity.setThumbnailUrl(doc.getString("thumbnailUrl"));
+        entity.setTags(doc.getString("tags"));
+        entity.setYoutubeUrl(doc.getString("youtubeUrl"));
+        entity.setSourceUrl(doc.getString("sourceUrl"));
+        entity.setImageSource(doc.getString("imageSource"));
+        entity.setCreativeCommonsConfirmed(doc.getString("creativeCommonsConfirmed"));
+        entity.setDateModified(doc.getString("dateModified"));
+        entity.setIngredientsJson(doc.getString("ingredientsJson"));
+
+        Long createdAt = doc.getLong("createdAt");
+        entity.setCreatedAt(createdAt != null ? createdAt : System.currentTimeMillis());
+
+        return entity;
     }
 }

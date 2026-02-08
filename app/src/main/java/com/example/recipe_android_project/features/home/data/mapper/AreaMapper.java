@@ -17,7 +17,6 @@ public final class AreaMapper {
     private AreaMapper() {
     }
 
-    // ==================== DTO -> DOMAIN ====================
 
     @Nullable
     public static Area toDomain(@Nullable AreaDto dto) {
@@ -54,7 +53,6 @@ public final class AreaMapper {
         return toDomain(dto).getAreas();
     }
 
-    // ==================== DOMAIN -> DTO ====================
 
     @Nullable
     public static AreaDto toDto(@Nullable Area domain) {

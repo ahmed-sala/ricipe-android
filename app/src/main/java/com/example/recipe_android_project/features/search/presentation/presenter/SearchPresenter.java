@@ -35,12 +35,12 @@ public class SearchPresenter implements SearchContract.Presenter {
     private int currentTab = TAB_MEALS;
 
     private Disposable currentSearchDisposable;
+    private Disposable favoriteDisposable;
 
     public SearchPresenter(SearchRepository repository) {
         this.repository = repository;
         setupSearchDebounce();
     }
-
 
     private void setupSearchDebounce() {
         Disposable searchDisposable = searchSubject
@@ -54,7 +54,6 @@ public class SearchPresenter implements SearchContract.Presenter {
         disposables.add(searchDisposable);
     }
 
-
     @Override
     public void attachView(SearchContract.View view) {
         this.view = view;
@@ -65,6 +64,9 @@ public class SearchPresenter implements SearchContract.Presenter {
         this.view = null;
     }
 
+    private boolean isViewAttached() {
+        return view != null;
+    }
 
     @Override
     public void onSearchQueryChanged(String query) {
@@ -105,7 +107,6 @@ public class SearchPresenter implements SearchContract.Presenter {
         }
     }
 
-
     @Override
     public void onTabChanged(int tabIndex) {
         this.currentTab = tabIndex;
@@ -122,7 +123,6 @@ public class SearchPresenter implements SearchContract.Presenter {
             performSearch(currentQuery);
         }
     }
-
 
     private void performSearch(String query) {
         if (view == null) return;
@@ -149,7 +149,7 @@ public class SearchPresenter implements SearchContract.Presenter {
     }
 
     private void searchMeals(String query) {
-        currentSearchDisposable = repository.searchMealsByName(query)
+        currentSearchDisposable = repository.getSearchedMealsWithFavoriteStatus(query)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -180,7 +180,6 @@ public class SearchPresenter implements SearchContract.Presenter {
                 );
         disposables.add(currentSearchDisposable);
     }
-
 
     private void handleMealsResult(String query, List<Meal> meals) {
         if (!isValidResult(query)) return;
@@ -225,7 +224,6 @@ public class SearchPresenter implements SearchContract.Presenter {
         return view != null && query.equals(currentQuery);
     }
 
-
     @Override
     public void loadInitialData() {
         preloadIngredients();
@@ -243,8 +241,7 @@ public class SearchPresenter implements SearchContract.Presenter {
                                 view.showIngredients(ingredients);
                             }
                         },
-                        throwable -> {
-                        }
+                        throwable -> { }
                 );
         disposables.add(disposable);
     }
@@ -260,9 +257,7 @@ public class SearchPresenter implements SearchContract.Presenter {
                                 view.showAreas(areas);
                             }
                         },
-                        throwable -> {
-
-                        }
+                        throwable -> { }
                 );
         disposables.add(disposable);
     }
@@ -325,9 +320,9 @@ public class SearchPresenter implements SearchContract.Presenter {
     @Override
     public void onMealClicked(Meal meal) {
         if (view != null && meal != null) {
+            view.navigateToMealDetail(meal.getId());
         }
     }
-
     @Override
     public void onIngredientClicked(Ingredient ingredient) {
         if (view != null && ingredient != null) {
@@ -339,7 +334,6 @@ public class SearchPresenter implements SearchContract.Presenter {
             view.navigateToFilterResult(params);
         }
     }
-
     @Override
     public void onAreaClicked(Area area) {
         if (view != null && area != null) {
@@ -351,22 +345,87 @@ public class SearchPresenter implements SearchContract.Presenter {
             view.navigateToFilterResult(params);
         }
     }
+    @Override
+    public void addToFavorites(Meal meal) {
+        if (!isViewAttached() || meal == null) return;
 
+        if (!isUserLoggedIn()) {
+            view.showLoginRequired();
+            return;
+        }
 
+        cancelFavoriteRequest();
+
+        favoriteDisposable = repository.addToFavorites(meal)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            if (isViewAttached()) {
+                                meal.setFavorite(true);
+                                view.onFavoriteAdded(meal);
+                                view.updateMealFavoriteStatus(meal, true);
+                            }
+                        },
+                        throwable -> {
+                            if (isViewAttached()) {
+                                view.onFavoriteError(getErrorMessage(throwable));
+                            }
+                        }
+                );
+        disposables.add(favoriteDisposable);
+    }
+    @Override
+    public void removeFromFavorites(Meal meal) {
+        if (!isViewAttached() || meal == null) return;
+
+        if (!isUserLoggedIn()) {
+            view.showLoginRequired();
+            return;
+        }
+
+        cancelFavoriteRequest();
+
+        favoriteDisposable = repository.removeFromFavorites(meal)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            if (isViewAttached()) {
+                                meal.setFavorite(false);
+                                view.onFavoriteRemoved(meal);
+                                view.updateMealFavoriteStatus(meal, false);
+                            }
+                        },
+                        throwable -> {
+                            if (isViewAttached()) {
+                                view.onFavoriteError(getErrorMessage(throwable));
+                            }
+                        }
+                );
+        disposables.add(favoriteDisposable);
+    }
+    @Override
+    public boolean isUserLoggedIn() {
+        return repository.isUserAuthenticated();
+    }
+    private void cancelFavoriteRequest() {
+        if (favoriteDisposable != null && !favoriteDisposable.isDisposed()) {
+            favoriteDisposable.dispose();
+        }
+    }
     private void handleSearchError(String query, Throwable throwable) {
         if (!isValidResult(query)) return;
 
         view.hideLoading();
         view.showError(getErrorMessage(throwable));
     }
-
     private void handleError(String message) {
         if (view != null) {
             view.hideLoading();
             view.showError(message);
         }
     }
-
     private String getErrorMessage(Throwable throwable) {
         if (throwable == null) {
             return "An unknown error occurred";
@@ -374,7 +433,7 @@ public class SearchPresenter implements SearchContract.Presenter {
 
         String message = throwable.getMessage();
         if (message == null || message.isEmpty()) {
-            return "An error occurred while searching";
+            return "An error occurred";
         }
 
         if (throwable instanceof java.net.UnknownHostException) {
@@ -387,26 +446,15 @@ public class SearchPresenter implements SearchContract.Presenter {
 
         return message;
     }
-
-
     private void cancelCurrentSearch() {
         if (currentSearchDisposable != null && !currentSearchDisposable.isDisposed()) {
             currentSearchDisposable.dispose();
         }
     }
-
-    public int getCurrentTab() {
-        return currentTab;
-    }
-
-    public String getCurrentQuery() {
-        return currentQuery;
-    }
-
-
     @Override
     public void dispose() {
         cancelCurrentSearch();
+        cancelFavoriteRequest();
         disposables.clear();
         repository.clearCache();
     }

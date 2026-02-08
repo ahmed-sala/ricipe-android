@@ -1,6 +1,7 @@
 package com.example.recipe_android_project.features.search.presentation.view;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
@@ -10,12 +11,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,6 +30,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.airbnb.lottie.LottieAnimationView;
 import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.core.listeners.OnMealClickListener;
+import com.example.recipe_android_project.core.ui.AlertDialogHelper;
+import com.example.recipe_android_project.core.ui.SnackbarHelper;
 import com.example.recipe_android_project.features.home.model.Area;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.home.presentation.view.MealAdapter;
@@ -48,7 +51,9 @@ import java.util.List;
 
 public class SearchFragment extends Fragment implements
         SearchContract.View,
-        OnMealClickListener, OnAreaClickListener, OnIngredientClickListener {
+        OnMealClickListener,
+        OnAreaClickListener,
+        OnIngredientClickListener {
 
     private static final int VOICE_SEARCH_REQUEST_CODE = 100;
 
@@ -117,7 +122,7 @@ public class SearchFragment extends Fragment implements
     }
 
     private void initPresenter() {
-        SearchRepository repository = new SearchRepository();
+        SearchRepository repository = new SearchRepository(requireContext());
         presenter = new SearchPresenter(repository);
     }
 
@@ -205,7 +210,6 @@ public class SearchFragment extends Fragment implements
         });
 
         icMicrophone.setOnClickListener(v -> startVoiceSearch());
-
         icClear.setOnClickListener(v -> clearSearch());
 
         icSearch.setOnClickListener(v -> {
@@ -227,7 +231,6 @@ public class SearchFragment extends Fragment implements
         });
     }
 
-
     private void updateSearchIcons(boolean hasText) {
         if (hasText) {
             icMicrophone.setVisibility(View.GONE);
@@ -238,19 +241,16 @@ public class SearchFragment extends Fragment implements
         }
     }
 
-
     private void clearSearch() {
         etSearch.setText("");
         etSearch.clearFocus();
-
-         hideKeyboard();
+        hideKeyboard();
     }
 
     private void hideKeyboard() {
         if (getActivity() != null) {
-            android.view.inputmethod.InputMethodManager imm =
-                    (android.view.inputmethod.InputMethodManager) getActivity()
-                            .getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+            InputMethodManager imm = (InputMethodManager) getActivity()
+                    .getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null && etSearch != null) {
                 imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
             }
@@ -338,7 +338,9 @@ public class SearchFragment extends Fragment implements
 
     @Override
     public void showError(String message) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+        if (getView() != null) {
+            SnackbarHelper.showError(getView(), message);
+        }
     }
 
     @Override
@@ -352,8 +354,6 @@ public class SearchFragment extends Fragment implements
     public void hideSearchPlaceholder() {
         searchPlaceholderContainer.setVisibility(View.GONE);
     }
-
-
 
     private void showEmptyState(String title, String message) {
         if (emptyStateContainer != null) {
@@ -385,6 +385,52 @@ public class SearchFragment extends Fragment implements
         navController.navigate(action);
     }
 
+    @Override
+    public void navigateToMealDetail(String mealId) {
+        if (mealId == null) return;
+
+        SearchFragmentDirections.ActionSearchFragmentToMealDetailFragment action =
+                SearchFragmentDirections.actionSearchFragmentToMealDetailFragment(mealId);
+
+        NavController navController = Navigation.findNavController(requireView());
+        navController.navigate(action);
+    }
+
+
+    @Override
+    public void onFavoriteAdded(Meal meal) {
+        if (getView() != null) {
+            SnackbarHelper.showSuccess(getView(), getString(R.string.added_to_favorites));
+        }
+    }
+
+    @Override
+    public void onFavoriteRemoved(Meal meal) {
+        if (getView() != null) {
+            SnackbarHelper.showSuccess(getView(), getString(R.string.removed_from_favorites));
+        }
+    }
+
+    @Override
+    public void onFavoriteError(String message) {
+        if (getView() != null) {
+            SnackbarHelper.showError(getView(), message);
+        }
+    }
+
+    @Override
+    public void updateMealFavoriteStatus(Meal meal, boolean isFavorite) {
+        if (meal == null) return;
+        mealAdapter.updateMealFavoriteStatus(meal.getId(), isFavorite);
+    }
+
+    @Override
+    public void showLoginRequired() {
+        if (getView() != null) {
+            SnackbarHelper.showWarning(getView(), getString(R.string.login_required));
+        }
+    }
+
 
     @Override
     public void onMealClick(Meal meal, int position) {
@@ -392,14 +438,54 @@ public class SearchFragment extends Fragment implements
     }
 
     @Override
-    public void onFavoriteClick(Meal meal, int position, boolean isFavorite) {
-        if (isFavorite) {
+    public void onFavoriteClick(Meal meal, int position, boolean currentlyFavorite) {
+        handleFavoriteClick(meal);
+    }
+
+    private void handleFavoriteClick(Meal meal) {
+        if (meal == null) return;
+
+        if (!presenter.isUserLoggedIn()) {
+            showLoginRequired();
+            return;
+        }
+
+        if (meal.isFavorite()) {
+            showRemoveFavoriteDialog(meal);
         } else {
+            presenter.addToFavorites(meal);
         }
     }
 
+    private void showRemoveFavoriteDialog(Meal meal) {
+        String mealName = meal.getName() != null ? meal.getName() : "this meal";
+
+        AlertDialogHelper.showRemoveFavoriteDialog(
+                requireContext(),
+                mealName,
+                new AlertDialogHelper.OnConfirmDialogListener() {
+                    @Override
+                    public void onConfirm() {
+                        presenter.removeFromFavorites(meal);
+                    }
+
+                    @Override
+                    public void onCancel() {
+                    }
+                }
+        );
+    }
 
 
+    @Override
+    public void onAreaClick(Area area) {
+        presenter.onAreaClicked(area);
+    }
+
+    @Override
+    public void onIngredientClick(Ingredient ingredient) {
+        presenter.onIngredientClicked(ingredient);
+    }
 
 
     private void startVoiceSearch() {
@@ -409,6 +495,7 @@ public class SearchFragment extends Fragment implements
         try {
             startActivityForResult(intent, VOICE_SEARCH_REQUEST_CODE);
         } catch (Exception e) {
+            showError("Voice search not available");
         }
     }
 
@@ -431,17 +518,5 @@ public class SearchFragment extends Fragment implements
         super.onDestroyView();
         presenter.detachView();
         presenter.dispose();
-    }
-
-    @Override
-    public void onAreaClick(Area area) {
-        presenter.onAreaClicked(area);
-
-    }
-
-    @Override
-    public void onIngredientClick(Ingredient ingredient) {
-        presenter.onIngredientClicked(ingredient);
-
     }
 }

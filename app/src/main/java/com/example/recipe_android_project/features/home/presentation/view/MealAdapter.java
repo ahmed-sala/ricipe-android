@@ -22,17 +22,17 @@ import com.example.recipe_android_project.core.listeners.OnMealClickListener;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.google.android.material.card.MaterialCardView;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
 
-
-
     private List<Meal> items;
-    private final Set<Integer> favoritePositions = new HashSet<>();
     private final OnMealClickListener listener;
+
+    private static final int COLOR_FAVORITE_BG = 0xFFE27036;
+    private static final int COLOR_UNFAVORITE_BG = 0xFFFFF5F0;
+    private static final int COLOR_FAVORITE_ICON = 0xFFFFFFFF;
+    private static final int COLOR_UNFAVORITE_ICON = 0xFFE27036;
 
     public MealAdapter(List<Meal> items, OnMealClickListener listener) {
         this.items = items;
@@ -41,8 +41,20 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
 
     public void setItems(List<Meal> items) {
         this.items = items;
-        favoritePositions.clear();
         notifyDataSetChanged();
+    }
+
+    public void updateMealFavoriteStatus(String mealId, boolean isFavorite) {
+        if (items == null || mealId == null) return;
+
+        for (int i = 0; i < items.size(); i++) {
+            Meal meal = items.get(i);
+            if (meal != null && mealId.equals(meal.getId())) {
+                meal.setFavorite(isFavorite);
+                notifyItemChanged(i, "favorite"); // Partial update for better performance
+                break;
+            }
+        }
     }
 
     @NonNull
@@ -56,10 +68,17 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
     @Override
     public void onBindViewHolder(@NonNull VH holder, int position) {
         Meal meal = items.get(position);
+        if (meal == null) return;
 
-        holder.tvTitle.setText(meal.getName());
-        holder.tvCategory.setText(meal.getCategory() != null ? meal.getCategory().toUpperCase() : "");
+        holder.tvTitle.setText(meal.getName() != null ? meal.getName() : "");
 
+        String category = meal.getCategory();
+        if (category != null && !category.isEmpty()) {
+            holder.tvCategory.setText(category.toUpperCase());
+            holder.tvCategory.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvCategory.setVisibility(View.GONE);
+        }
         holder.imgLoader.setVisibility(View.VISIBLE);
         holder.imgLoader.playAnimation();
 
@@ -91,39 +110,49 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
                 })
                 .into(holder.imgMeal);
 
-        boolean isFavorite = favoritePositions.contains(position);
-        updateFavoriteIcon(holder, isFavorite);
+        updateFavoriteIcon(holder, meal.isFavorite());
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onMealClick(meal, position);
+            if (listener != null) {
+                listener.onMealClick(meal, holder.getAdapterPosition());
+            }
         });
-
-
 
         holder.btnFavorite.setOnClickListener(v -> {
-            boolean newState;
-            if (favoritePositions.contains(position)) {
-                favoritePositions.remove(position);
-                newState = false;
-            } else {
-                favoritePositions.add(position);
-                newState = true;
+            if (listener != null) {
+                int adapterPosition = holder.getAdapterPosition();
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    listener.onFavoriteClick(meal, adapterPosition, meal.isFavorite());
+                }
             }
-            updateFavoriteIcon(holder, newState);
-
-            if (listener != null) listener.onFavoriteClick(meal, position, newState);
         });
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull VH holder, int position, @NonNull List<Object> payloads) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position);
+        } else {
+            for (Object payload : payloads) {
+                if ("favorite".equals(payload)) {
+                    Meal meal = items.get(position);
+                    if (meal != null) {
+                        updateFavoriteIcon(holder, meal.isFavorite());
+                    }
+                }
+            }
+        }
     }
 
     private void updateFavoriteIcon(VH holder, boolean isFavorite) {
         if (isFavorite) {
             holder.icFavorite.setImageResource(R.drawable.favorite_icon);
-            holder.btnFavorite.setCardBackgroundColor(0xFFFF7A1A);
-            holder.icFavorite.setColorFilter(0xFFFFFFFF);
+            holder.btnFavorite.setCardBackgroundColor(COLOR_FAVORITE_BG);
+            holder.icFavorite.setColorFilter(COLOR_FAVORITE_ICON);
         } else {
             holder.icFavorite.setImageResource(R.drawable.ic_favorite_border);
-            holder.btnFavorite.setCardBackgroundColor(0xFFFFF5F0);
-            holder.icFavorite.setColorFilter(0xFFFF7A1A);
+            holder.btnFavorite.setCardBackgroundColor(COLOR_UNFAVORITE_BG);
+            holder.icFavorite.setColorFilter(COLOR_UNFAVORITE_ICON);
         }
     }
 
@@ -142,7 +171,7 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
 
     static class VH extends RecyclerView.ViewHolder {
         ImageView imgMeal, icFavorite;
-        TextView tvTitle,  tvCategory;
+        TextView tvTitle, tvCategory;
         MaterialCardView btnFavorite;
         LottieAnimationView imgLoader;
 
@@ -152,7 +181,6 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
             tvTitle = itemView.findViewById(R.id.tvMealTitle);
             tvCategory = itemView.findViewById(R.id.tvMealCategory);
             btnFavorite = itemView.findViewById(R.id.btnFavorite);
-
             icFavorite = itemView.findViewById(R.id.icFavorite);
             imgLoader = itemView.findViewById(R.id.lottieImgLoading);
         }

@@ -44,7 +44,7 @@
                 android:layout_marginStart="12dp"
                 android:layout_marginEnd="12dp"
                 android:background="@null"
-                android:hint="Search meals, ingredients, countries..."
+                android:hint="@string/search_meals_ingredients_countries"
                 android:imeOptions="actionSearch"
                 android:inputType="text"
                 android:maxLines="1"
@@ -61,7 +61,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/mic_icon"
-                android:contentDescription="Voice search"
+                android:contentDescription="@string/voice_search"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:padding="2dp"
                 app:tint="#FF7A1A"
@@ -74,11 +74,13 @@
                 android:id="@+id/icClear"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/clear_icon"
-                android:contentDescription="Clear search"
+                android:src="@drawable/ic_close"
+                android:contentDescription="@string/clear_search"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:padding="2dp"
-                app:tint="#757575"
+                app:tint="@color/gray"
+                android:clickable="true"
+                android:focusable="true"
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -112,21 +114,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:text="Meals" />
+                android:text="@string/meals" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipIngredients"
                 style="@style/Widget.App.Chip.Choice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Ingredients" />
+                android:text="@string/ingredients" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipCountry"
                 style="@style/Widget.App.Chip.Choice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Country" />
+                android:text="@string/country" />
 
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
@@ -161,14 +163,14 @@
                     android:layout_width="200dp"
                     android:layout_height="200dp"
                     android:src="@drawable/start_search_meal"
-                    android:contentDescription="Search for meals" />
+                    android:contentDescription="@string/search_for_meals" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Search for meals"
+                    android:text="@string/search_for_meals"
                     android:textColor="#212121"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -179,7 +181,7 @@
                     android:layout_marginTop="8dp"
                     android:gravity="center"
                     android:paddingHorizontal="32dp"
-                    android:text="Type to start searching for delicious meals"
+                    android:text="@string/type_to_start_searching_for_delicious_meals"
                     android:textColor="#757575"
                     android:textSize="14sp" />
             </LinearLayout>
@@ -237,7 +239,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="No results found"
+                android:text="@string/no_results_found"
                 android:textColor="#212121"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -249,7 +251,7 @@
                 android:layout_marginTop="8dp"
                 android:gravity="center"
                 android:paddingHorizontal="32dp"
-                android:text="Try searching with different keywords"
+                android:text="@string/try_searching_with_different_keywords"
                 android:textColor="#757575"
                 android:textSize="14sp" />
 

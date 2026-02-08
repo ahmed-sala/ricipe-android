@@ -30,7 +30,7 @@ import com.example.recipe_android_project.core.ui.SnackbarHelper;
 import com.example.recipe_android_project.core.utils.PasswordHasher.PasswordStrength;
 import com.example.recipe_android_project.features.auth.presentation.contract.RegisterContract;
 import com.example.recipe_android_project.features.auth.presentation.presenter.RegisterPresenter;
-import com.example.recipe_android_project.features.dashboard.view.DashboardActivity;
+import com.example.recipe_android_project.features.dashboard.presentation.view.DashboardActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;

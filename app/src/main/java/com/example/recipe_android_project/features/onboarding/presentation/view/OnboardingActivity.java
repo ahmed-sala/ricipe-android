@@ -14,7 +14,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.core.helper.SharedPreferencesManager;
 import com.example.recipe_android_project.features.auth.presentation.view.AuthActivity;
-import com.example.recipe_android_project.features.dashboard.view.DashboardActivity;
+import com.example.recipe_android_project.features.dashboard.presentation.view.DashboardActivity;
 import com.example.recipe_android_project.features.onboarding.presentation.contract.OnboardingContract;
 import com.example.recipe_android_project.features.onboarding.data.local.OnboardingLocalDataSource;
 import com.example.recipe_android_project.features.onboarding.data.repository.OnboardingRepository;
