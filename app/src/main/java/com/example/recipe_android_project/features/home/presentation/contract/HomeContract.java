@@ -16,14 +16,19 @@ public interface HomeContract {
         void showError(String message);
         void onHomeLoaded();
         void hideMealOfDayLoading();
-
-
+        void onFavoriteAdded(Meal meal);
+        void onFavoriteRemoved(Meal meal);
+        void onFavoriteError(String message);
+        void updateMealFavoriteStatus(Meal meal, boolean isFavorite);
+        void showLoginRequired();
     }
 
     interface Presenter {
         void loadHome();
         void onCategorySelected(Category category);
-        void NavigateToMealDetails(Meal meal);
         void detach();
+        void addToFavorites(Meal meal);
+        void removeFromFavorites(Meal meal);
+        boolean isUserLoggedIn();
     }
 }

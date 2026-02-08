@@ -62,7 +62,6 @@
             app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
-    <!-- Meal Detail Fragment with Safe Args -->
     <fragment
         android:id="@+id/mealDetailFragment"
         android:name="com.example.recipe_android_project.features.meal_detail.presentation.view.MealDetailFragment"
@@ -76,7 +75,7 @@
 
     <fragment
         android:id="@+id/favouriteFragment"
-        android:name="com.example.recipe_android_project.features.favourites.view.FavouriteFragment"
+        android:name="com.example.recipe_android_project.features.favourites.presentation.view.FavouriteFragment"
         android:label="Favourites"
         tools:layout="@layout/fragment_favourite">
 

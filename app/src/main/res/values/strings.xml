@@ -59,4 +59,33 @@
     <string name="search_for_meals">Search for meals</string>
     <string name="search_ingredients_countries">Search ingredients, countries...</string>
     <string name="close">Close</string>
+    <string name="remove_favorite">Remove Favorite</string>
+    <string name="remove_favorite_message">Are you sure you want to remove \"%1$s\" from your favorites?</string>
+    <string name="remove">Remove</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+    <string name="added_to_favorites">Added to favorites</string>
+    <string name="removed_from_favorites">Removed from favorites</string>
+    <string name="login_required">Please login to add favorites</string>
+    <string name="favorite_error">Failed to update favorite</string>
+    <string name="remove_favorite_confirm_message">Are you sure you want to remove this meal from your favorites?</string>
+    <string name="my_favorites">My Favorites</string>
+    <string name="search_favorites_hint">Search your favorites…</string>
+    <string name="no_favorites_yet">No Favorites Yet</string>
+    <string name="no_favorites_subtitle">Start adding your favorite recipes and they will appear here</string>
+    <string name="no_results_found">No Results Found</string>
+    <string name="no_favorites_match">No favorites match \'%1$s\'</string>
+    <string name="favorite_removed">Favorite removed</string>
+    <string name="favorite_removed_name">%1$s removed from favorites</string>
+    <string name="favorite_restored">Favorite restored</string>
+    <string name="undo">UNDO</string>
+
+    <string name="remove_favorite_title">Remove Favorite?</string>
+    <string name="search_meals_ingredients_countries">Search meals, ingredients, countries...</string>
+    <string name="voice_search">Voice search</string>
+    <string name="clear_search">Clear search</string>
+    <string name="meals">Meals</string>
+    <string name="ingredients">Ingredients</string>
+    <string name="country">Country</string>
+    <string name="try_searching_with_different_keywords">Try searching with different keywords</string>
 </resources>

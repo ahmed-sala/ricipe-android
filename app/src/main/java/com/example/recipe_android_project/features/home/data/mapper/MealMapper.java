@@ -1,6 +1,6 @@
 package com.example.recipe_android_project.features.home.data.mapper;
 
-import com.example.recipe_android_project.features.home.data.entities.MealEntity;
+import com.example.recipe_android_project.features.home.data.entities.FavoriteMealEntity;
 import com.example.recipe_android_project.features.home.data.dto.meal.MealDto;
 import com.example.recipe_android_project.features.home.model.Ingredient;
 import com.example.recipe_android_project.features.home.model.Meal;
@@ -18,7 +18,6 @@ public class MealMapper {
     private MealMapper() {
     }
 
-    // ==================== DTO -> DOMAIN ====================
 
     public static Meal toDomain(MealDto dto) {
         if (dto == null) return null;
@@ -56,14 +55,11 @@ public class MealMapper {
         }
         return meals;
     }
-
-    // ==================== ENTITY -> DOMAIN ====================
-
-    public static Meal toDomain(MealEntity entity) {
+    public static Meal toDomain(FavoriteMealEntity entity) {
         if (entity == null) return null;
 
         Meal meal = new Meal();
-        meal.setId(entity.getId());
+        meal.setId(entity.getMealId()); // Changed from getId() to getMealId()
         meal.setName(entity.getName());
         meal.setAlternateName(entity.getAlternateName());
         meal.setCategory(entity.getCategory());
@@ -77,16 +73,15 @@ public class MealMapper {
         meal.setCreativeCommonsConfirmed(entity.getCreativeCommonsConfirmed());
         meal.setDateModified(entity.getDateModified());
         meal.setIngredients(jsonToIngredients(entity.getIngredientsJson()));
-        meal.setFavorite(entity.isFavorite());
+        meal.setFavorite(true);
         meal.setCreatedAt(entity.getCreatedAt());
 
         return meal;
     }
-
-    public static List<Meal> toDomainListFromEntities(List<MealEntity> entities) {
+    public static List<Meal> toDomainListFromEntities(List<FavoriteMealEntity> entities) {
         List<Meal> meals = new ArrayList<>();
         if (entities != null) {
-            for (MealEntity entity : entities) {
+            for (FavoriteMealEntity entity : entities) {
                 Meal meal = toDomain(entity);
                 if (meal != null) {
                     meals.add(meal);
@@ -95,14 +90,12 @@ public class MealMapper {
         }
         return meals;
     }
+    public static FavoriteMealEntity toEntity(Meal meal, String userId) {
+        if (meal == null || userId == null || userId.isEmpty()) return null;
 
-    // ==================== DOMAIN -> ENTITY ====================
-
-    public static MealEntity toEntity(Meal meal) {
-        if (meal == null) return null;
-
-        MealEntity entity = new MealEntity();
-        entity.setId(meal.getId() != null ? meal.getId() : "");
+        FavoriteMealEntity entity = new FavoriteMealEntity();
+        entity.setMealId(meal.getId() != null ? meal.getId() : "");
+        entity.setUserId(userId);
         entity.setName(meal.getName());
         entity.setAlternateName(meal.getAlternateName());
         entity.setCategory(meal.getCategory());
@@ -116,17 +109,15 @@ public class MealMapper {
         entity.setCreativeCommonsConfirmed(meal.getCreativeCommonsConfirmed());
         entity.setDateModified(meal.getDateModified());
         entity.setIngredientsJson(ingredientsToJson(meal.getIngredients()));
-        entity.setFavorite(meal.isFavorite());
-        entity.setCreatedAt(meal.getCreatedAt());
+        entity.setCreatedAt(System.currentTimeMillis());
 
         return entity;
     }
-
-    public static List<MealEntity> toEntityList(List<Meal> meals) {
-        List<MealEntity> entities = new ArrayList<>();
-        if (meals != null) {
+    public static List<FavoriteMealEntity> toEntityList(List<Meal> meals, String userId) {
+        List<FavoriteMealEntity> entities = new ArrayList<>();
+        if (meals != null && userId != null && !userId.isEmpty()) {
             for (Meal meal : meals) {
-                MealEntity entity = toEntity(meal);
+                FavoriteMealEntity entity = toEntity(meal, userId);
                 if (entity != null) {
                     entities.add(entity);
                 }
@@ -134,8 +125,29 @@ public class MealMapper {
         }
         return entities;
     }
+    public static FavoriteMealEntity toEntity(MealDto dto, String userId) {
+        if (dto == null || userId == null || userId.isEmpty()) return null;
 
-    // ==================== HELPER METHODS ====================
+        FavoriteMealEntity entity = new FavoriteMealEntity();
+        entity.setMealId(dto.getIdMeal() != null ? dto.getIdMeal() : "");
+        entity.setUserId(userId);
+        entity.setName(dto.getStrMeal());
+        entity.setAlternateName(dto.getStrMealAlternate());
+        entity.setCategory(dto.getStrCategory());
+        entity.setArea(dto.getStrArea());
+        entity.setInstructions(dto.getStrInstructions());
+        entity.setThumbnailUrl(dto.getStrMealThumb());
+        entity.setTags(dto.getStrTags());
+        entity.setYoutubeUrl(dto.getStrYoutube());
+        entity.setSourceUrl(dto.getStrSource());
+        entity.setImageSource(dto.getStrImageSource());
+        entity.setCreativeCommonsConfirmed(dto.getStrCreativeCommonsConfirmed());
+        entity.setDateModified(dto.getDateModified());
+        entity.setIngredientsJson(ingredientsToJson(extractIngredients(dto)));
+        entity.setCreatedAt(System.currentTimeMillis());
+
+        return entity;
+    }
 
     private static List<Ingredient> extractIngredients(MealDto dto) {
         List<Ingredient> ingredients = new ArrayList<>();
@@ -188,5 +200,43 @@ public class MealMapper {
         } catch (Exception e) {
             return new ArrayList<>();
         }
+    }
+    public static List<String> getMealIds(List<FavoriteMealEntity> entities) {
+        List<String> ids = new ArrayList<>();
+        if (entities != null) {
+            for (FavoriteMealEntity entity : entities) {
+                if (entity.getMealId() != null && !entity.getMealId().isEmpty()) {
+                    ids.add(entity.getMealId());
+                }
+            }
+        }
+        return ids;
+    }
+
+    public static boolean isMealInFavorites(String mealId, List<FavoriteMealEntity> favorites) {
+        if (mealId == null || favorites == null) return false;
+        for (FavoriteMealEntity entity : favorites) {
+            if (mealId.equals(entity.getMealId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static List<Meal> markFavorites(List<Meal> meals, List<FavoriteMealEntity> favorites) {
+        if (meals == null) return new ArrayList<>();
+        if (favorites == null || favorites.isEmpty()) return meals;
+
+        List<String> favoriteIds = getMealIds(favorites);
+        for (Meal meal : meals) {
+            meal.setFavorite(favoriteIds.contains(meal.getId()));
+        }
+        return meals;
+    }
+
+    public static Meal markFavorite(Meal meal, List<FavoriteMealEntity> favorites) {
+        if (meal == null) return null;
+        meal.setFavorite(isMealInFavorites(meal.getId(), favorites));
+        return meal;
     }
 }

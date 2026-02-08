@@ -22,6 +22,7 @@
     <color name="chip_background">#F5F5F5</color>
     <color name="ingredient_bg">#FFF3E0</color>
     <color name="measure_item_bg">#FAFAFA</color>
+    <color name="color_unfavourite_bg">#FFF5F0</color>
     <!-- Text -->
     <color name="text_primary">#1C1C1E</color>
     <color name="text_secondary">#8A8A8E</color>
