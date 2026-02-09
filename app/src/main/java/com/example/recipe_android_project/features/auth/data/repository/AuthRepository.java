@@ -10,8 +10,8 @@ import com.example.recipe_android_project.features.auth.data.entities.UserEntity
 import com.example.recipe_android_project.features.auth.data.mapper.UserMapper;
 import com.example.recipe_android_project.features.auth.domain.model.User;
 import com.example.recipe_android_project.features.home.data.entities.FavoriteMealEntity;
+import com.example.recipe_android_project.features.plan.data.entity.MealPlanEntity;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.rxjava3.core.Completable;
@@ -22,11 +22,14 @@ public class AuthRepository {
     private final AuthLocalDatasource localDatasource;
     private final AuthRemoteDatasource firebaseDatasource;
     private final UserSessionManager sessionManager;
+
     public AuthRepository(Context context) {
         this.localDatasource = new AuthLocalDatasource(context);
         this.firebaseDatasource = new AuthRemoteDatasource(context);
         this.sessionManager = UserSessionManager.getInstance(context);
     }
+
+
     public Single<User> register(String fullName, String email, String password) {
         if (firebaseDatasource.isNetworkAvailable()) {
             return registerWithFirebaseSync(fullName, email, password)
@@ -106,6 +109,7 @@ public class AuthRepository {
                     .subscribeOn(Schedulers.io());
         }
     }
+
     @SuppressLint("CheckResult")
     private Single<UserEntity> loginWithFirebaseSync(String email, String password) {
         return localDatasource.isEmailExists(email)
@@ -125,7 +129,10 @@ public class AuthRepository {
                                                     );
 
                                                     syncFirestoreToLocal(firebaseUser, localUser);
+
                                                     syncFavoritesOnLogin(firebaseUid, localUser.getId());
+
+                                                    syncMealPlansOnLogin(firebaseUid, localUser.getId());
                                                 });
                                     } else {
                                         return createLocalUserFromFirebase(firebaseUser, password, firebaseUid)
@@ -138,6 +145,8 @@ public class AuthRepository {
                                                     );
 
                                                     syncFavoritesOnLogin(firebaseUid, newLocalUser.getId());
+
+                                                    syncMealPlansOnLogin(firebaseUid, newLocalUser.getId());
                                                 });
                                     }
                                 })
@@ -174,9 +183,10 @@ public class AuthRepository {
                 .subscribeOn(Schedulers.io())
                 .subscribe(
                         () -> { },
-                        e -> {  }
+                        e -> { }
                 );
     }
+
     public Completable syncFavoritesFromFirestore(String firebaseUid, String localUserId) {
         if (firebaseUid == null || firebaseUid.isEmpty()) {
             return Completable.complete();
@@ -194,7 +204,6 @@ public class AuthRepository {
                         return Completable.complete();
                     }
 
-                    // Update user IDs to local user ID for Room
                     for (FavoriteMealEntity entity : firestoreFavorites) {
                         entity.setUserId(finalLocalUserId);
                     }
@@ -204,6 +213,46 @@ public class AuthRepository {
                 .onErrorComplete()
                 .subscribeOn(Schedulers.io());
     }
+    @SuppressLint("CheckResult")
+    private void syncMealPlansOnLogin(String firebaseUid, String localUserId) {
+        if (firebaseUid == null || firebaseUid.isEmpty()) return;
+        if (!firebaseDatasource.isNetworkAvailable()) return;
+
+        syncMealPlansFromFirestore(firebaseUid, localUserId)
+                .subscribeOn(Schedulers.io())
+                .subscribe(
+                        () -> { },
+                        e -> { }
+                );
+    }
+    public Completable syncMealPlansFromFirestore(String firebaseUid, String localUserId) {
+        if (firebaseUid == null || firebaseUid.isEmpty()) {
+            return Completable.complete();
+        }
+
+        if (!firebaseDatasource.isNetworkAvailable()) {
+            return Completable.complete();
+        }
+
+        final String finalLocalUserId = (localUserId != null) ? localUserId : firebaseUid;
+
+        return firebaseDatasource.getMealPlansFromFirestore(firebaseUid)
+                .flatMapCompletable(firestoreMealPlans -> {
+                    if (firestoreMealPlans.isEmpty()) {
+                        return Completable.complete();
+                    }
+
+                    for (MealPlanEntity entity : firestoreMealPlans) {
+                        entity.setUserId(finalLocalUserId);
+                        entity.setSynced(true);
+                    }
+
+                    return localDatasource.mergeMealPlansFromFirestore(firestoreMealPlans);
+                })
+                .onErrorComplete()
+                .subscribeOn(Schedulers.io());
+    }
+
     private Completable syncFirestoreToLocal(UserEntity firebaseUser, UserEntity localUser) {
         return Completable.defer(() -> {
             if (firebaseUser.getFullName() != null &&
@@ -236,6 +285,8 @@ public class AuthRepository {
                 .ignoreElement()
                 .onErrorComplete();
     }
+
+
     public Completable logout() {
         Completable localLogout = localDatasource.logout()
                 .doOnComplete(() -> sessionManager.clearSession());
@@ -291,6 +342,7 @@ public class AuthRepository {
     }
 
 
-
-
+    public boolean isNetworkAvailable() {
+        return firebaseDatasource.isNetworkAvailable();
+    }
 }

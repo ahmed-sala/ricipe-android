@@ -27,11 +27,13 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.ui.AddToPlanDialogHelper;
 import com.example.recipe_android_project.core.ui.AlertDialogHelper;
 import com.example.recipe_android_project.core.ui.SnackbarHelper;
 import com.example.recipe_android_project.features.home.model.Ingredient;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.meal_detail.domain.model.InstructionStep;
+import com.example.recipe_android_project.features.meal_detail.domain.model.MealPlan;
 import com.example.recipe_android_project.features.meal_detail.presentation.contract.MealDetailContract;
 import com.example.recipe_android_project.features.meal_detail.presentation.presenter.MealDetailPresenter;
 import com.google.android.material.appbar.AppBarLayout;
@@ -49,7 +51,6 @@ import java.util.regex.Pattern;
 
 public class MealDetailFragment extends Fragment implements MealDetailContract.View {
 
-    // ==================== VIEWS ====================
     private AppBarLayout appBarLayout;
     private CollapsingToolbarLayout collapsingToolbar;
     private ImageView ivMealImage, ivBack, ivFavorite;
@@ -65,24 +66,19 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
     private MaterialCardView cardVideoPlayer, cardNoVideo;
     private MaterialButton btnAddToWeeklyPlan;
 
-    // Loading views
     private FrameLayout loadingContainer;
     private LottieAnimationView lottieScreenLoading;
     private LottieAnimationView lottieImageLoading;
     private TextView tvLoadingMessage;
     private View contentContainer;
 
-    // Favorite loading (optional - add to layout if needed)
-    private ProgressBar favoriteLoadingProgress;
-
-    // Adapters
     private InstructionsAdapter instructionsAdapter;
     private IngredientsAdapter ingredientsAdapter;
 
-    // Presenter
     private MealDetailPresenter presenter;
 
-    // State
+    private AddToPlanDialogHelper addToPlanDialogHelper;
+
     private boolean isAppBarCollapsed = false;
     private String mealTitle = "";
     private boolean currentFavoriteState = false;
@@ -109,14 +105,12 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
     }
 
     private void initViews(View view) {
-        // Loading views
         loadingContainer = view.findViewById(R.id.loadingContainer);
         lottieScreenLoading = view.findViewById(R.id.lottieScreenLoading);
         lottieImageLoading = view.findViewById(R.id.lottieImageLoading);
         tvLoadingMessage = view.findViewById(R.id.tvLoadingMessage);
         contentContainer = view.findViewById(R.id.contentContainer);
 
-        // AppBar views
         appBarLayout = view.findViewById(R.id.appBarLayout);
         collapsingToolbar = view.findViewById(R.id.collapsingToolbar);
         ivMealImage = view.findViewById(R.id.ivMealImage);
@@ -128,7 +122,6 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         btnFavorite = view.findViewById(R.id.btnFavorite);
         tvToolbarTitle = view.findViewById(R.id.tvToolbarTitle);
 
-        // Content views
         tvMealTitle = view.findViewById(R.id.tvMealTitle);
         tvCategory = view.findViewById(R.id.tvCategory);
         tvCountryFlag = view.findViewById(R.id.tvCountryFlag);
@@ -138,16 +131,11 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         rvInstructions = view.findViewById(R.id.rvInstructions);
         btnReadMore = view.findViewById(R.id.btnReadMore);
 
-        // Video views
         youtubePlayerView = view.findViewById(R.id.youtubePlayerView);
         cardVideoPlayer = view.findViewById(R.id.cardVideoPlayer);
         cardNoVideo = view.findViewById(R.id.cardNoVideo);
 
-        // Action buttons
         btnAddToWeeklyPlan = view.findViewById(R.id.btnAddToWeeklyPlan);
-
-        // Optional: Favorite loading progress (add to layout if needed)
-        // favoriteLoadingProgress = view.findViewById(R.id.favoriteLoadingProgress);
     }
 
     private void setupPresenter() {
@@ -163,14 +151,12 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
     }
 
     private void setupRecyclerViews() {
-        // Ingredients RecyclerView
         rvIngredients.setLayoutManager(
                 new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         );
         ingredientsAdapter = new IngredientsAdapter(new ArrayList<>());
         rvIngredients.setAdapter(ingredientsAdapter);
 
-        // Instructions RecyclerView
         rvInstructions.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvInstructions.setNestedScrollingEnabled(false);
         instructionsAdapter = new InstructionsAdapter(new ArrayList<>());
@@ -217,8 +203,6 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         btnBack.setBackgroundResource(R.drawable.bg_toolbar_button_light);
         btnFavorite.setBackgroundResource(R.drawable.bg_toolbar_button_light);
         ivBack.setColorFilter(ContextCompat.getColor(requireContext(), R.color.black), PorterDuff.Mode.SRC_IN);
-
-        // Update favorite icon color based on state
         updateFavoriteIconColor();
     }
 
@@ -226,8 +210,6 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         btnBack.setBackgroundResource(R.drawable.bg_toolbar_button);
         btnFavorite.setBackgroundResource(R.drawable.bg_toolbar_button);
         ivBack.setColorFilter(ContextCompat.getColor(requireContext(), R.color.white), PorterDuff.Mode.SRC_IN);
-
-        // Update favorite icon color based on state
         updateFavoriteIconColor();
     }
 
@@ -256,7 +238,6 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         getLifecycle().addObserver(youtubePlayerView);
     }
 
-    // ==================== LOADING METHODS ====================
 
     @Override
     public void showScreenLoading() {
@@ -296,7 +277,6 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         }
     }
 
-    // ==================== MEAL DETAILS METHODS ====================
 
     @Override
     public void showMealDetails(Meal meal) {
@@ -389,7 +369,6 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         btnReadMore.setVisibility(instructionsAdapter.hasMore() ? View.VISIBLE : View.GONE);
     }
 
-    // ==================== VIDEO METHODS ====================
 
     @Override
     public void showYoutubeVideo(String youtubeUrl) {
@@ -419,30 +398,25 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         cardNoVideo.setVisibility(View.VISIBLE);
     }
 
-    // ==================== FAVORITE METHODS ====================
 
     @Override
     public void updateFavoriteStatus(boolean isFavorite) {
         this.currentFavoriteState = isFavorite;
 
-        // Update icon based on favorite state
         int iconRes = isFavorite ? R.drawable.ic_favorite_filled
                 : R.drawable.ic_favorite_border;
         ivFavorite.setImageResource(iconRes);
 
-        // Update icon color
         updateFavoriteIconColor();
     }
 
     private void updateFavoriteIconColor() {
         if (currentFavoriteState) {
-            // When favorite - show orange/red color regardless of toolbar state
             ivFavorite.setColorFilter(
                     ContextCompat.getColor(requireContext(), R.color.primary),
                     PorterDuff.Mode.SRC_IN
             );
         } else {
-            // When not favorite - color depends on toolbar state
             int color = isAppBarCollapsed ? R.color.black : R.color.white;
             ivFavorite.setColorFilter(
                     ContextCompat.getColor(requireContext(), color),
@@ -453,26 +427,12 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
 
     @Override
     public void showFavoriteLoading() {
-        // Disable button during loading
         btnFavorite.setEnabled(false);
-
-        // Optional: Show progress indicator
-        // if (favoriteLoadingProgress != null) {
-        //     favoriteLoadingProgress.setVisibility(View.VISIBLE);
-        //     ivFavorite.setVisibility(View.INVISIBLE);
-        // }
     }
 
     @Override
     public void hideFavoriteLoading() {
-        // Re-enable button
         btnFavorite.setEnabled(true);
-
-        // Optional: Hide progress indicator
-        // if (favoriteLoadingProgress != null) {
-        //     favoriteLoadingProgress.setVisibility(View.GONE);
-        //     ivFavorite.setVisibility(View.VISIBLE);
-        // }
     }
 
     @Override
@@ -497,9 +457,6 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         if (getView() != null) {
             SnackbarHelper.showWarning(getView(), getString(R.string.login_required));
         }
-
-        // Optional: Navigate to login screen
-        // Navigation.findNavController(requireView()).navigate(R.id.action_to_login);
     }
 
     @Override
@@ -517,13 +474,150 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
 
                     @Override
                     public void onCancel() {
-                        // Do nothing - user cancelled
                     }
                 }
         );
     }
 
-    // ==================== ERROR & NAVIGATION ====================
+
+    @Override
+    public void showAddToPlanDialog(Meal meal) {
+        if (meal == null) return;
+
+        addToPlanDialogHelper = new AddToPlanDialogHelper();
+        addToPlanDialogHelper.showAddToPlanDialog(
+                requireContext(),
+                meal,
+                new AddToPlanDialogHelper.OnPlanActionListener() {
+                    @Override
+                    public void onAddToPlan(String date, String mealType) {
+                        presenter.addToPlan(date, mealType);
+                    }
+
+                    @Override
+                    public void onCancel() {
+                    }
+
+                    @Override
+                    public void onDateOrMealTypeChanged(String date, String mealType) {
+                        presenter.checkMealPlanExists(date, mealType);
+                    }
+                }
+        );
+    }
+
+    @Override
+    public void showPlanLoading() {
+        btnAddToWeeklyPlan.setEnabled(false);
+    }
+
+    @Override
+    public void hidePlanLoading() {
+        btnAddToWeeklyPlan.setEnabled(true);
+    }
+
+    @Override
+    public void showPlanAddedSuccess(String mealType, String date) {
+        if (addToPlanDialogHelper != null) {
+            addToPlanDialogHelper.dismiss();
+        }
+
+        String formattedMealType = capitalizeFirst(mealType);
+        String message = "Added to " + formattedMealType + " plan successfully!";
+
+        if (getView() != null) {
+            SnackbarHelper.showSuccess(getView(), message);
+        }
+    }
+
+    @Override
+    public void showPlanUpdatedSuccess(String mealType, String date) {
+        if (addToPlanDialogHelper != null) {
+            addToPlanDialogHelper.dismiss();
+        }
+
+        String formattedMealType = capitalizeFirst(mealType);
+        String message = formattedMealType + " plan updated successfully!";
+
+        if (getView() != null) {
+            SnackbarHelper.showSuccess(getView(), message);
+        }
+    }
+
+    @Override
+    public void showPlanRemovedSuccess(String mealType, String date) {
+        String formattedMealType = capitalizeFirst(mealType);
+        String message = formattedMealType + " plan removed successfully!";
+
+        if (getView() != null) {
+            SnackbarHelper.showSuccess(getView(), message);
+        }
+    }
+
+    @Override
+    public void showPlanError(String message) {
+        if (getView() != null) {
+            SnackbarHelper.showError(getView(), message);
+        }
+    }
+
+    @Override
+    public void showPlanExistsDialog(MealPlan existingPlan, String newMealName) {
+        if (existingPlan == null) return;
+
+        AlertDialogHelper.showPlanExistsDialog(
+                requireContext(),
+                existingPlan.getMealName(),
+                newMealName,
+                existingPlan.getDate(),
+                existingPlan.getMealType(),
+                new AlertDialogHelper.OnPlanExistsDialogListener() {
+                    @Override
+                    public void onReplace() {
+                        if (addToPlanDialogHelper != null) {
+                            String date = addToPlanDialogHelper.getSelectedDate();
+                            String mealType = addToPlanDialogHelper.getSelectedMealType();
+                            addToPlanDialogHelper.dismiss();
+                            presenter.replacePlan(date, mealType);
+                        }
+                    }
+
+                    @Override
+                    public void onCancel() {
+                    }
+                }
+        );
+    }
+
+    @Override
+    public void showRemovePlanConfirmation(MealPlan mealPlan) {
+        if (mealPlan == null) return;
+
+        AlertDialogHelper.showRemovePlanDialog(
+                requireContext(),
+                mealPlan.getMealName(),
+                mealPlan.getDate(),
+                mealPlan.getMealType(),
+                new AlertDialogHelper.OnConfirmDialogListener() {
+                    @Override
+                    public void onConfirm() {
+                        presenter.confirmRemovePlan(mealPlan.getDate(), mealPlan.getMealType());
+                    }
+
+                    @Override
+                    public void onCancel() {
+                    }
+                }
+        );
+    }
+
+    @Override
+    public void updatePlanExistsWarning(boolean exists, String existingMealName) {
+        if (addToPlanDialogHelper != null && addToPlanDialogHelper.isShowing()) {
+            addToPlanDialogHelper.updateExistingPlanWarning(exists, existingMealName);
+        }
+    }
+
 
     @Override
     public void showError(String message) {
@@ -537,7 +631,11 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         Navigation.findNavController(requireView()).navigateUp();
     }
 
-    // ==================== HELPER METHODS ====================
+
+    private String capitalizeFirst(String text) {
+        if (text == null || text.isEmpty()) return text;
+        return text.substring(0, 1).toUpperCase() + text.substring(1).toLowerCase();
+    }
 
     private String getCountryFlag(String area) {
         if (area == null) return "🏳️";
@@ -616,7 +714,6 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         return matcher.find() ? matcher.group() : null;
     }
 
-    // ==================== LIFECYCLE ====================
 
     @Override
     public void onDestroyView() {
@@ -636,6 +733,11 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
 
         if (lottieImageLoading != null) {
             lottieImageLoading.cancelAnimation();
+        }
+
+        if (addToPlanDialogHelper != null) {
+            addToPlanDialogHelper.dismiss();
+            addToPlanDialogHelper = null;
         }
 
         if (presenter != null) {

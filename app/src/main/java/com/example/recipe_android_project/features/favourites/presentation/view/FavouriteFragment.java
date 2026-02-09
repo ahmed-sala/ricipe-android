@@ -30,7 +30,6 @@ import com.example.recipe_android_project.features.favourites.presentation.prese
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.google.android.material.card.MaterialCardView;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class FavouriteFragment extends Fragment implements

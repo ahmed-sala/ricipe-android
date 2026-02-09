@@ -53,7 +53,6 @@
     <string name="categories">Categories</string>
     <string name="hello_chef">Hello, Chef! 👋</string>
     <string name="spaghetti_carbonara">Spaghetti Carbonara</string>
-    <string name="breakfast">Breakfast</string>
     <string name="pasta">Pasta</string>
     <string name="type_to_start_searching_for_delicious_meals">Type to start searching for delicious meals</string>
     <string name="search_for_meals">Search for meals</string>
@@ -61,7 +60,6 @@
     <string name="close">Close</string>
     <string name="remove_favorite">Remove Favorite</string>
     <string name="remove_favorite_message">Are you sure you want to remove \"%1$s\" from your favorites?</string>
-    <string name="remove">Remove</string>
     <string name="cancel">Cancel</string>
     <string name="confirm">Confirm</string>
     <string name="added_to_favorites">Added to favorites</string>
@@ -88,4 +86,25 @@
     <string name="ingredients">Ingredients</string>
     <string name="country">Country</string>
     <string name="try_searching_with_different_keywords">Try searching with different keywords</string>
+    <string name="add_to_plan">Add to Plan</string>
+    <string name="add_to_weekly_plan">Add to Weekly Plan</string>
+    <string name="select_date">Select Date</string>
+    <string name="select_meal_type">Select Meal Type</string>
+    <string name="choose_meal_type">Choose meal type</string>
+    <string name="breakfast">Breakfast</string>
+    <string name="lunch">Lunch</string>
+    <string name="dinner">Dinner</string>
+    <string name="replace">Replace</string>
+    <string name="remove">Remove</string>
+
+    <string name="plan_added_success">Meal added to plan successfully!</string>
+    <string name="plan_updated_success">Meal plan updated successfully!</string>
+    <string name="plan_removed_success">Meal plan removed successfully!</string>
+
+    <string name="meal_already_planned">Meal Already Planned</string>
+    <string name="plan_exists_message">You already have a meal planned for this time slot.</string>
+    <string name="do_you_want_to_replace">Do you want to replace it?</string>
+
+    <string name="remove_meal_plan">Remove Meal Plan?</string>
+    <string name="remove_plan_message">Are you sure you want to remove this meal from your plan?</string>
 </resources>

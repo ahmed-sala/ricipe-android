@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/dayContainer"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_margin="3dp"
+    android:layout_weight="1"
+    android:background="@drawable/day_background_normal"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingTop="12dp"
+    android:paddingBottom="16dp">
+
+    <TextView
+        android:id="@+id/tvDayName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mon"
+        android:textColor="#8B8077"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/tvDayNumber"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="12"
+        android:textColor="#3D3D3D"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+</LinearLayout>
