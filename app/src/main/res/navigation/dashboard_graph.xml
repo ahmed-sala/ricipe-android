@@ -90,9 +90,21 @@
 
     <fragment
         android:id="@+id/planFragment"
-        android:name="com.example.recipe_android_project.features.plan.view.PlanFragment"
+        android:name="com.example.recipe_android_project.features.plan.presentation.view.PlanFragment"
         android:label="Plan"
-        tools:layout="@layout/fragment_plan" />
+        tools:layout="@layout/fragment_plan" >
+        <action
+            android:id="@+id/action_planFragment_to_mealDetailFragment"
+            app:destination="@id/mealDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"
+            />
+        <action
+            android:id="@+id/action_planFragment_to_searchFragment"
+            app:destination="@id/searchFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/profileFragment"

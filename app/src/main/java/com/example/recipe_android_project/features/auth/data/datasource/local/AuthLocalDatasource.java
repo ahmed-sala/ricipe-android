@@ -9,6 +9,8 @@ import com.example.recipe_android_project.core.utils.PasswordHasher.PasswordVali
 import com.example.recipe_android_project.features.auth.data.entities.UserEntity;
 import com.example.recipe_android_project.features.home.data.datasource.local.MealDao;
 import com.example.recipe_android_project.features.home.data.entities.FavoriteMealEntity;
+import com.example.recipe_android_project.features.plan.data.datasource.local.MealPlanDao;
+import com.example.recipe_android_project.features.plan.data.entity.MealPlanEntity;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,14 +23,18 @@ public class AuthLocalDatasource {
 
     private final UserDao userDao;
     private final MealDao mealDao;
+    private final MealPlanDao mealPlanDao;
     private final UserSessionManager sessionManager;
 
     public AuthLocalDatasource(Context context) {
         DbManager dbManager = DbManager.getInstance(context);
         userDao = dbManager.userDao();
         mealDao = dbManager.favoriteMealDao();
+        mealPlanDao = dbManager.mealPlanDao();
         sessionManager = UserSessionManager.getInstance(context);
     }
+
+
     public UserSessionManager getSessionManager() {
         return sessionManager;
     }
@@ -48,6 +54,8 @@ public class AuthLocalDatasource {
     public boolean hasValidSession() {
         return sessionManager.hasValidSession();
     }
+
+
     public Single<UserEntity> registerUser(String fullName, String email, String password) {
         return registerUserWithId(UUID.randomUUID().toString(), fullName, email, password);
     }
@@ -96,6 +104,8 @@ public class AuthLocalDatasource {
                     });
         });
     }
+
+
     public Single<UserEntity> login(String email, String password) {
         return userDao.getUserByEmail(email)
                 .switchIfEmpty(Single.error(new Exception("Invalid email or password")))
@@ -131,11 +141,16 @@ public class AuthLocalDatasource {
                             });
                 });
     }
+
+
     public Completable logout() {
         return userDao.logoutAllUsers()
                 .doOnSuccess(result -> sessionManager.clearSession())
                 .ignoreElement();
     }
+
+
+
     public Single<UserEntity> getCurrentUser() {
         String userId = sessionManager.getCurrentUserId();
 
@@ -178,9 +193,12 @@ public class AuthLocalDatasource {
     public Single<Boolean> isEmailExists(String email) {
         return userDao.isEmailExists(email);
     }
+
     public Single<Boolean> isUserExists(String userId) {
         return userDao.isUserExists(userId);
     }
+
+
     public Single<Boolean> updateUser(UserEntity user) {
         user.setUpdatedAt(System.currentTimeMillis());
         return userDao.updateUser(user)
@@ -207,6 +225,7 @@ public class AuthLocalDatasource {
                     return false;
                 });
     }
+
     public Single<Boolean> updateEmail(String userId, String email) {
         return userDao.isEmailExists(email)
                 .flatMap(exists -> {
@@ -225,6 +244,7 @@ public class AuthLocalDatasource {
                             });
                 });
     }
+
     public Single<Boolean> updatePassword(String userId, String oldPassword, String newPassword) {
         return Single.defer(() -> {
             PasswordValidationResult validationResult = PasswordHasher.validatePasswordStrength(newPassword);
@@ -244,6 +264,7 @@ public class AuthLocalDatasource {
                     });
         });
     }
+
     public Single<Boolean> updateUserInfo(String userId, String fullName, String email) {
         return userDao.getUserById(userId)
                 .switchIfEmpty(Single.error(new Exception("User not found")))
@@ -260,6 +281,7 @@ public class AuthLocalDatasource {
                     return performUserInfoUpdate(userId, fullName, email);
                 });
     }
+
     private Single<Boolean> performUserInfoUpdate(String userId, String fullName, String email) {
         return userDao.updateUserInfo(userId, fullName, email, System.currentTimeMillis())
                 .map(result -> {
@@ -272,6 +294,8 @@ public class AuthLocalDatasource {
                     return false;
                 });
     }
+
+
     public Single<Boolean> deleteUser(UserEntity user) {
         return userDao.deleteUser(user)
                 .map(result -> {
@@ -284,6 +308,7 @@ public class AuthLocalDatasource {
                     return false;
                 });
     }
+
     public Single<Boolean> deleteUserById(String userId) {
         return userDao.deleteUserById(userId)
                 .map(result -> {
@@ -301,5 +326,17 @@ public class AuthLocalDatasource {
             return Completable.complete();
         }
         return mealDao.insertAllFavorites(firestoreFavorites);
+    }
+    public Completable mergeMealPlansFromFirestore(List<MealPlanEntity> firestoreMealPlans) {
+        if (firestoreMealPlans == null || firestoreMealPlans.isEmpty()) {
+            return Completable.complete();
+        }
+        return mealPlanDao.insertAllMealPlans(firestoreMealPlans);
+    }
+    public Single<List<MealPlanEntity>> getUnsyncedMealPlans(String userId) {
+        return mealPlanDao.getUnsyncedMealPlans(userId);
+    }
+    public Completable updateMealPlanSyncStatus(String userId, String date, String mealType, boolean isSynced) {
+        return mealPlanDao.updateSyncStatus(userId, date, mealType, isSynced);
     }
 }

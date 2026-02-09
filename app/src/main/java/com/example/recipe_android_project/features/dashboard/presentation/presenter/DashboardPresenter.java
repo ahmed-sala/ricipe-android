@@ -18,10 +18,8 @@ public class DashboardPresenter implements DashboardContract.Presenter {
     private final UserSessionManager sessionManager;
     private final CompositeDisposable disposables = new CompositeDisposable();
 
-    // Current favorites count from database
     private int currentFavoritesCount = 0;
 
-    // Track if user is currently on favorites tab
     private boolean isOnFavoritesTab = false;
 
     public DashboardPresenter(Context context) {
@@ -29,7 +27,6 @@ public class DashboardPresenter implements DashboardContract.Presenter {
         this.sessionManager =  UserSessionManager.getInstance(context);
     }
 
-    // Constructor for testing
 
 
     @Override
@@ -64,7 +61,6 @@ public class DashboardPresenter implements DashboardContract.Presenter {
                 .subscribe(
                         this::handleFavoritesCountUpdate,
                         throwable -> {
-                            // On error, hide badge
                             if (isViewAttached()) {
                                 view.hideFavoritesBadge();
                             }
@@ -79,15 +75,11 @@ public class DashboardPresenter implements DashboardContract.Presenter {
 
         currentFavoritesCount = count;
 
-        // Always update the badge count
         view.updateBadgeCount(count);
 
-        // Show or hide based on current tab and count
         if (isOnFavoritesTab) {
-            // Hide badge when on favorites tab
             view.hideFavoritesBadge();
         } else {
-            // Show badge when NOT on favorites tab and count > 0
             if (count > 0) {
                 view.showFavoritesBadge(count);
             } else {
@@ -114,12 +106,4 @@ public class DashboardPresenter implements DashboardContract.Presenter {
         }
     }
 
-    @Override
-    public boolean isOnFavoritesTab() {
-        return isOnFavoritesTab;
-    }
-
-    public int getCurrentFavoritesCount() {
-        return currentFavoritesCount;
-    }
 }

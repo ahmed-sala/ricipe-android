@@ -1,6 +1,5 @@
 package com.example.recipe_android_project.features.dashboard.presentation.view;
 
-
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -19,15 +18,14 @@ import com.example.recipe_android_project.features.dashboard.presentation.presen
 import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-public class DashboardActivity extends AppCompatActivity implements DashboardContract.View {
+public class DashboardActivity extends AppCompatActivity
+        implements DashboardContract.View, TabNavigator {
 
     private NavController navController;
     private BottomNavigationView bottomNavigationView;
 
-    // Badge
     private BadgeDrawable favouritesBadge;
 
-    // Presenter
     private DashboardPresenter presenter;
 
     @Override
@@ -41,14 +39,12 @@ public class DashboardActivity extends AppCompatActivity implements DashboardCon
             return insets;
         });
 
-        // Initialize presenter
         presenter = new DashboardPresenter(this);
         presenter.attachView(this);
 
         setupNavigation();
         setupFavoritesBadge();
 
-        // Start observing favorites count
         presenter.observeFavoritesCount();
     }
 
@@ -62,7 +58,6 @@ public class DashboardActivity extends AppCompatActivity implements DashboardCon
             navController = navHostFragment.getNavController();
             NavigationUI.setupWithNavController(bottomNavigationView, navController);
 
-            // Listen for destination changes
             navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
                 handleDestinationChanged(destination);
             });
@@ -70,15 +65,12 @@ public class DashboardActivity extends AppCompatActivity implements DashboardCon
     }
 
     private void setupFavoritesBadge() {
-        // Get or create badge for favorites menu item
         favouritesBadge = bottomNavigationView.getOrCreateBadge(R.id.favouriteFragment);
 
-        // Customize badge appearance
         favouritesBadge.setBackgroundColor(getResources().getColor(R.color.primary, getTheme()));
         favouritesBadge.setBadgeTextColor(getResources().getColor(R.color.white, getTheme()));
         favouritesBadge.setMaxCharacterCount(3); // Shows "99+" for counts > 99
 
-        // Initially hidden
         favouritesBadge.setVisible(false);
     }
 
@@ -86,15 +78,20 @@ public class DashboardActivity extends AppCompatActivity implements DashboardCon
         if (destination == null || presenter == null) return;
 
         if (destination.getId() == R.id.favouriteFragment) {
-            // User navigated to favorites tab
             presenter.onFavoritesTabSelected();
         } else {
-            // User navigated to another tab
             presenter.onOtherTabSelected();
         }
     }
 
-    // ==================== CONTRACT VIEW METHODS ====================
+
+    @Override
+    public void navigateToSearchTab() {
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setSelectedItemId(R.id.searchFragment);
+        }
+    }
+
 
     @Override
     public void showFavoritesBadge(int count) {
@@ -118,7 +115,6 @@ public class DashboardActivity extends AppCompatActivity implements DashboardCon
         }
     }
 
-    // ==================== LIFECYCLE ====================
 
     @Override
     public boolean onSupportNavigateUp() {

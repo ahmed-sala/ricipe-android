@@ -12,13 +12,17 @@ import com.example.recipe_android_project.features.dashboard.data.datasource.loc
 import com.example.recipe_android_project.features.favourites.data.datasource.local.FavouriteDao;
 import com.example.recipe_android_project.features.home.data.datasource.local.MealDao;
 import com.example.recipe_android_project.features.home.data.entities.FavoriteMealEntity;
+import com.example.recipe_android_project.features.plan.data.datasource.local.MealPlanDao;
+import com.example.recipe_android_project.features.plan.data.entity.MealPlanEntity;
 
 @Database(
         entities = {
                 UserEntity.class,
-                FavoriteMealEntity.class
+                FavoriteMealEntity.class,
+                MealPlanEntity.class
+
         },
-        version = 2,
+        version = 3,
         exportSchema = false
 )
 public abstract class DbManager extends RoomDatabase {
@@ -27,6 +31,7 @@ public abstract class DbManager extends RoomDatabase {
     public abstract MealDao favoriteMealDao();
     public abstract FavouriteDao favouriteDao();
     public abstract DashboardDao dashboardDao();
+    public abstract MealPlanDao mealPlanDao();
 
     private static volatile DbManager INSTANCE;
     private static final String DATABASE_NAME = "recipe_app_db";

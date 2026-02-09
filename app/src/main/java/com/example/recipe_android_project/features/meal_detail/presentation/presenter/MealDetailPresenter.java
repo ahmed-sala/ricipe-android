@@ -7,6 +7,7 @@ import com.example.recipe_android_project.core.utils.InstructionParser;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.meal_detail.data.repository.MealDetailRepository;
 import com.example.recipe_android_project.features.meal_detail.domain.model.InstructionStep;
+import com.example.recipe_android_project.features.meal_detail.domain.model.MealPlan;
 import com.example.recipe_android_project.features.meal_detail.presentation.contract.MealDetailContract;
 
 import java.util.List;
@@ -24,17 +25,17 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View>
 
     private Disposable mealDetailDisposable;
     private Disposable favoriteDisposable;
+    private Disposable mealPlanDisposable;
+    private Disposable checkPlanDisposable;
 
     private Meal currentMeal;
     private boolean isFavorite = false;
+    private MealPlan existingPlan = null;
 
     public MealDetailPresenter(Context context) {
         this.repository = new MealDetailRepository(context);
     }
 
-    public MealDetailPresenter(MealDetailRepository repository) {
-        this.repository = repository;
-    }
 
     @Override
     public void loadMealDetails(String mealId) {
@@ -49,7 +50,6 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View>
 
         getView().showScreenLoading();
 
-        // Load meal with favorite status
         mealDetailDisposable = repository.getMealByIdWithFavoriteStatus(mealId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -88,7 +88,6 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View>
         disposables.add(mealDetailDisposable);
     }
 
-    // ==================== FAVORITE METHODS ====================
 
     @Override
     public void onFavoriteClicked() {
@@ -100,10 +99,8 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View>
         }
 
         if (isFavorite) {
-            // Show confirmation dialog before removing
             getView().showRemoveFavoriteConfirmation(currentMeal);
         } else {
-            // Add to favorites directly
             addToFavorites();
         }
     }
@@ -188,7 +185,6 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View>
 
     @Override
     public void confirmRemoveFromFavorites() {
-        // Called when user confirms removal in dialog
         removeFromFavorites();
     }
 
@@ -197,27 +193,142 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View>
         return repository.isUserAuthenticated();
     }
 
-    // ==================== OTHER METHODS ====================
 
+    @Override
+    public void onAddToWeeklyPlanClicked() {
+        if (!isViewAttached() || currentMeal == null) return;
+
+        if (!isUserLoggedIn()) {
+            getView().showLoginRequired();
+            return;
+        }
+
+        getView().showAddToPlanDialog(currentMeal);
+    }
+
+    @Override
+    public void checkMealPlanExists(String date, String mealType) {
+        if (!isViewAttached() || date == null || mealType == null) return;
+
+        cancelCheckPlanRequest();
+
+        checkPlanDisposable = repository.getMealPlan(date, mealType)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        mealPlan -> {
+                            if (isViewAttached()) {
+                                existingPlan = mealPlan;
+                                getView().updatePlanExistsWarning(true, mealPlan.getMealName());
+                            }
+                        },
+                        throwable -> {
+                            if (isViewAttached()) {
+                                existingPlan = null;
+                                getView().updatePlanExistsWarning(false, null);
+                            }
+                        }
+                );
+        disposables.add(checkPlanDisposable);
+    }
+
+    @Override
+    public void addToPlan(String date, String mealType) {
+        if (!isViewAttached() || currentMeal == null) return;
+
+        if (!isUserLoggedIn()) {
+            getView().showLoginRequired();
+            return;
+        }
+
+        if (date == null || date.isEmpty() || mealType == null || mealType.isEmpty()) {
+            getView().showPlanError("Please select date and meal type");
+            return;
+        }
+
+        if (existingPlan != null) {
+            getView().showPlanExistsDialog(existingPlan, currentMeal.getName());
+            return;
+        }
+
+        performAddToPlan(date, mealType, false);
+    }
+
+    @Override
+    public void replacePlan(String date, String mealType) {
+        if (!isViewAttached() || currentMeal == null) return;
+
+        performAddToPlan(date, mealType, true);
+    }
+
+    private void performAddToPlan(String date, String mealType, boolean isReplacing) {
+        cancelMealPlanRequest();
+
+        getView().showPlanLoading();
+
+        mealPlanDisposable = repository.addMealToPlan(currentMeal, date, mealType)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            if (isViewAttached()) {
+                                getView().hidePlanLoading();
+                                existingPlan = null;
+
+                                if (isReplacing) {
+                                    getView().showPlanUpdatedSuccess(mealType, date);
+                                } else {
+                                    getView().showPlanAddedSuccess(mealType, date);
+                                }
+                            }
+                        },
+                        throwable -> {
+                            if (isViewAttached()) {
+                                getView().hidePlanLoading();
+                                getView().showPlanError(
+                                        getErrorMessage(throwable, "Failed to add meal to plan")
+                                );
+                            }
+                        }
+                );
+        disposables.add(mealPlanDisposable);
+    }
+    @Override
+    public void confirmRemovePlan(String date, String mealType) {
+        if (!isViewAttached()) return;
+
+        cancelMealPlanRequest();
+
+        getView().showPlanLoading();
+
+        mealPlanDisposable = repository.removeMealPlan(date, mealType)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            if (isViewAttached()) {
+                                getView().hidePlanLoading();
+                                existingPlan = null;
+                                getView().showPlanRemovedSuccess(mealType, date);
+                            }
+                        },
+                        throwable -> {
+                            if (isViewAttached()) {
+                                getView().hidePlanLoading();
+                                getView().showPlanError(
+                                        getErrorMessage(throwable, "Failed to remove meal plan")
+                                );
+                            }
+                        }
+                );
+        disposables.add(mealPlanDisposable);
+    }
     @Override
     public void onBackClicked() {
         if (isViewAttached()) {
             getView().navigateBack();
         }
     }
-
-    @Override
-    public void onYoutubeVideoClicked() {
-        // Handle YouTube video click if needed
-    }
-
-    @Override
-    public void onAddToWeeklyPlanClicked() {
-        if (!isViewAttached() || currentMeal == null) return;
-        // TODO: Implement weekly plan feature
-    }
-
-    // ==================== HELPER METHODS ====================
 
     private String getErrorMessage(Throwable throwable, String defaultMessage) {
         if (throwable == null) {
@@ -252,9 +363,23 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View>
         }
     }
 
+    private void cancelMealPlanRequest() {
+        if (mealPlanDisposable != null && !mealPlanDisposable.isDisposed()) {
+            mealPlanDisposable.dispose();
+        }
+    }
+
+    private void cancelCheckPlanRequest() {
+        if (checkPlanDisposable != null && !checkPlanDisposable.isDisposed()) {
+            checkPlanDisposable.dispose();
+        }
+    }
+
     private void cancelAllRequests() {
         cancelMealDetailRequest();
         cancelFavoriteRequest();
+        cancelMealPlanRequest();
+        cancelCheckPlanRequest();
     }
 
     @Override
@@ -268,13 +393,8 @@ public class MealDetailPresenter extends BasePresenter<MealDetailContract.View>
         disposables.clear();
     }
 
-    // ==================== GETTERS ====================
 
-    public Meal getCurrentMeal() {
-        return currentMeal;
-    }
 
-    public boolean isFavorite() {
-        return isFavorite;
-    }
+
+
 }

@@ -14,6 +14,6 @@ public interface DashboardContract {
         void observeFavoritesCount();
         void onFavoritesTabSelected();
         void onOtherTabSelected();
-        boolean isOnFavoritesTab();
+
     }
 }

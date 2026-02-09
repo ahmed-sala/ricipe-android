@@ -183,7 +183,6 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
             filterFavorites(currentQuery);
         }
 
-        getView().onFavoriteRemoved(meal);
         getView().showUndoSnackbar(meal);
 
         pendingRemoveDisposable = Observable.timer(UNDO_TIMEOUT, TimeUnit.MILLISECONDS)

@@ -8,8 +8,15 @@ import com.example.recipe_android_project.features.home.data.mapper.MealMapper;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.meal_detail.data.datasource.local.MealDetailLocalDatasource;
 import com.example.recipe_android_project.features.meal_detail.data.datasource.remote.MealDetailRemoteDatasource;
+import com.example.recipe_android_project.features.meal_detail.domain.model.MealPlan;
+import com.example.recipe_android_project.features.meal_detail.domain.model.MealWithStatus;
+import com.example.recipe_android_project.features.plan.data.entity.MealPlanEntity;
+import com.example.recipe_android_project.features.plan.data.mapper.MealPlanMapper;
+
+import java.util.List;
 
 import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
@@ -24,17 +31,6 @@ public class MealDetailRepository {
         this.local = new MealDetailLocalDatasource(context);
         this.sessionManager = UserSessionManager.getInstance(context);
     }
-
-    // Constructor for testing/dependency injection
-    public MealDetailRepository(MealDetailRemoteDatasource remote,
-                                MealDetailLocalDatasource local,
-                                UserSessionManager sessionManager) {
-        this.remote = remote;
-        this.local = local;
-        this.sessionManager = sessionManager;
-    }
-
-    // ==================== HELPER METHODS ====================
 
     private String getLocalUserId() {
         return sessionManager.getCurrentUserIdOrNull();
@@ -55,9 +51,6 @@ public class MealDetailRepository {
     public boolean isUserAuthenticated() {
         return isUserLoggedIn();
     }
-
-    // ==================== MEAL OPERATIONS ====================
-
     public Single<Meal> getMealById(String id) {
         return remote.getMealById(id)
                 .flatMap(response -> {
@@ -65,12 +58,10 @@ public class MealDetailRepository {
                         return Single.error(new Exception("Meal not found"));
                     }
                     return Single.just(MealMapper.toDomain(response.getMeals().get(0)));
-                });
+                })
+                .subscribeOn(Schedulers.io());
     }
 
-    /**
-     * Get meal by ID with favorite status
-     */
     public Single<Meal> getMealByIdWithFavoriteStatus(String id) {
         return getMealById(id)
                 .flatMap(meal -> {
@@ -84,14 +75,9 @@ public class MealDetailRepository {
                                 meal.setFavorite(isFav);
                                 return meal;
                             });
-                });
+                })
+                .subscribeOn(Schedulers.io());
     }
-
-    // ==================== FAVORITE OPERATIONS ====================
-
-    /**
-     * Add meal to favorites
-     */
     public Completable addToFavorites(Meal meal) {
         if (meal == null) {
             return Completable.error(new IllegalArgumentException("Meal is required"));
@@ -104,16 +90,13 @@ public class MealDetailRepository {
             return Completable.error(new IllegalStateException("User not logged in"));
         }
 
-        // Create entity with local user ID for Room
         FavoriteMealEntity entity = MealMapper.toEntity(meal, localUserId);
         if (entity == null) {
             return Completable.error(new IllegalArgumentException("Failed to create favorite entity"));
         }
 
-        // Save to local DB first
         Completable localSave = local.addToFavorites(entity);
 
-        // Then sync to Firestore using Firebase UID
         Completable firestoreSync = Completable.defer(() -> {
             if (firebaseUserId != null && isNetworkAvailable()) {
                 FavoriteMealEntity firestoreEntity = MealMapper.toEntity(meal, firebaseUserId);
@@ -127,10 +110,6 @@ public class MealDetailRepository {
                 .andThen(firestoreSync)
                 .subscribeOn(Schedulers.io());
     }
-
-    /**
-     * Remove meal from favorites by meal ID
-     */
     public Completable removeFromFavorites(String mealId) {
         if (mealId == null || mealId.isEmpty()) {
             return Completable.error(new IllegalArgumentException("MealId is required"));
@@ -143,10 +122,8 @@ public class MealDetailRepository {
             return Completable.error(new IllegalStateException("User not logged in"));
         }
 
-        // Remove from local DB first
         Completable localRemove = local.removeFromFavorites(mealId, localUserId);
 
-        // Then sync to Firestore
         Completable firestoreSync = Completable.defer(() -> {
             if (firebaseUserId != null && isNetworkAvailable()) {
                 return remote.removeFavoriteFromFirestore(firebaseUserId, mealId)
@@ -160,9 +137,6 @@ public class MealDetailRepository {
                 .subscribeOn(Schedulers.io());
     }
 
-    /**
-     * Remove meal from favorites
-     */
     public Completable removeFromFavorites(Meal meal) {
         if (meal == null || meal.getId() == null) {
             return Completable.error(new IllegalArgumentException("Meal is required"));
@@ -170,31 +144,7 @@ public class MealDetailRepository {
         return removeFromFavorites(meal.getId());
     }
 
-    /**
-     * Toggle favorite status
-     */
-    public Completable toggleFavorite(Meal meal) {
-        if (meal == null || meal.getId() == null) {
-            return Completable.error(new IllegalArgumentException("Meal is required"));
-        }
 
-        if (!isUserLoggedIn()) {
-            return Completable.error(new IllegalStateException("User not logged in"));
-        }
-
-        return isFavorite(meal.getId())
-                .flatMapCompletable(isFav -> {
-                    if (isFav) {
-                        return removeFromFavorites(meal.getId());
-                    } else {
-                        return addToFavorites(meal);
-                    }
-                });
-    }
-
-    /**
-     * Check if meal is favorite
-     */
     public Single<Boolean> isFavorite(String mealId) {
         if (mealId == null || mealId.isEmpty()) {
             return Single.just(false);
@@ -205,6 +155,107 @@ public class MealDetailRepository {
             return Single.just(false);
         }
 
-        return local.isFavorite(mealId, localUserId);
+        return local.isFavorite(mealId, localUserId)
+                .subscribeOn(Schedulers.io());
     }
+
+    public Completable addMealToPlan(Meal meal, String date, String mealType) {
+        if (meal == null) {
+            return Completable.error(new IllegalArgumentException("Meal is required"));
+        }
+        if (date == null || date.isEmpty()) {
+            return Completable.error(new IllegalArgumentException("Date is required"));
+        }
+        if (mealType == null || mealType.isEmpty()) {
+            return Completable.error(new IllegalArgumentException("Meal type is required"));
+        }
+
+        String localUserId = getLocalUserId();
+        String firebaseUserId = getFirebaseUserId();
+
+        if (localUserId == null) {
+            return Completable.error(new IllegalStateException("User not logged in"));
+        }
+        MealPlanEntity localEntity = MealPlanMapper.createNewMealPlanEntity(
+                localUserId,
+                date,
+                mealType,
+                meal.getId(),
+                meal.getName(),
+                meal.getThumbnailUrl(),
+                meal.getCategory(),
+                meal.getArea()
+        );
+
+        Completable localSave = local.addMealPlan(localEntity);
+
+        Completable firestoreSync = Completable.defer(() -> {
+            if (firebaseUserId != null && isNetworkAvailable()) {
+                MealPlanEntity firestoreEntity = MealPlanMapper.createNewMealPlanEntity(
+                        firebaseUserId,
+                        date,
+                        mealType,
+                        meal.getId(),
+                        meal.getName(),
+                        meal.getThumbnailUrl(),
+                        meal.getCategory(),
+                        meal.getArea()
+                );
+                firestoreEntity.setSynced(true);
+
+                return remote.addMealPlanToFirestore(firestoreEntity)
+                        .andThen(local.updateMealPlanSyncStatus(localUserId, date, mealType, true))
+                        .onErrorComplete();
+            }
+            return Completable.complete();
+        });
+
+        return localSave
+                .andThen(firestoreSync)
+                .subscribeOn(Schedulers.io());
+    }
+    public Completable removeMealPlan(String date, String mealType) {
+        if (date == null || date.isEmpty()) {
+            return Completable.error(new IllegalArgumentException("Date is required"));
+        }
+        if (mealType == null || mealType.isEmpty()) {
+            return Completable.error(new IllegalArgumentException("Meal type is required"));
+        }
+
+        String localUserId = getLocalUserId();
+        String firebaseUserId = getFirebaseUserId();
+
+        if (localUserId == null) {
+            return Completable.error(new IllegalStateException("User not logged in"));
+        }
+
+        Completable localRemove = local.removeMealPlan(localUserId, date, mealType);
+
+        Completable firestoreSync = Completable.defer(() -> {
+            if (firebaseUserId != null && isNetworkAvailable()) {
+                return remote.removeMealPlanFromFirestore(firebaseUserId, date, mealType)
+                        .onErrorComplete();
+            }
+            return Completable.complete();
+        });
+
+        return localRemove
+                .andThen(firestoreSync)
+                .subscribeOn(Schedulers.io());
+    }
+    public Single<MealPlan> getMealPlan(String date, String mealType) {
+        if (date == null || date.isEmpty() || mealType == null || mealType.isEmpty()) {
+            return Single.error(new IllegalArgumentException("Date and MealType are required"));
+        }
+
+        String localUserId = getLocalUserId();
+        if (localUserId == null) {
+            return Single.error(new IllegalStateException("User not logged in"));
+        }
+
+        return local.getMealPlan(localUserId, date, mealType)
+                .map(MealPlanMapper::toDomain)
+                .subscribeOn(Schedulers.io());
+    }
+
 }

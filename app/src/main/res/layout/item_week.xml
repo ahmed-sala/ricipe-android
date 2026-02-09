@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:paddingHorizontal="6dp"
+    android:paddingVertical="4dp">
+
+    <!-- Day 0 (Sunday) -->
+    <LinearLayout
+        android:id="@+id/dayContainer0"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginHorizontal="3dp"
+        android:layout_weight="1"
+        android:background="@drawable/day_background_normal"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:minHeight="70dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="10dp">
+
+        <TextView
+            android:id="@+id/tvDayName0"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#8B8077"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tvDayNumber0"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#3D3D3D"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Day 1 (Monday) -->
+    <LinearLayout
+        android:id="@+id/dayContainer1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginHorizontal="3dp"
+        android:layout_weight="1"
+        android:background="@drawable/day_background_normal"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:minHeight="70dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="10dp">
+
+        <TextView
+            android:id="@+id/tvDayName1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#8B8077"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tvDayNumber1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#3D3D3D"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Day 2 (Tuesday) -->
+    <LinearLayout
+        android:id="@+id/dayContainer2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginHorizontal="3dp"
+        android:layout_weight="1"
+        android:background="@drawable/day_background_normal"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:minHeight="70dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="10dp">
+
+        <TextView
+            android:id="@+id/tvDayName2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#8B8077"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tvDayNumber2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#3D3D3D"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Day 3 (Wednesday) -->
+    <LinearLayout
+        android:id="@+id/dayContainer3"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginHorizontal="3dp"
+        android:layout_weight="1"
+        android:background="@drawable/day_background_normal"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:minHeight="70dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="10dp">
+
+        <TextView
+            android:id="@+id/tvDayName3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#8B8077"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tvDayNumber3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#3D3D3D"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Day 4 (Thursday) -->
+    <LinearLayout
+        android:id="@+id/dayContainer4"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginHorizontal="3dp"
+        android:layout_weight="1"
+        android:background="@drawable/day_background_normal"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:minHeight="70dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="10dp">
+
+        <TextView
+            android:id="@+id/tvDayName4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#8B8077"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tvDayNumber4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#3D3D3D"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Day 5 (Friday) -->
+    <LinearLayout
+        android:id="@+id/dayContainer5"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginHorizontal="3dp"
+        android:layout_weight="1"
+        android:background="@drawable/day_background_normal"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:minHeight="70dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="10dp">
+
+        <TextView
+            android:id="@+id/tvDayName5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#8B8077"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tvDayNumber5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#3D3D3D"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Day 6 (Saturday) -->
+    <LinearLayout
+        android:id="@+id/dayContainer6"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginHorizontal="3dp"
+        android:layout_weight="1"
+        android:background="@drawable/day_background_normal"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:minHeight="70dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="10dp">
+
+        <TextView
+            android:id="@+id/tvDayName6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#8B8077"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tvDayNumber6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#3D3D3D"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</LinearLayout>
