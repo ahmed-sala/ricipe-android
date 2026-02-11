@@ -51,5 +51,8 @@
     <color name="grey_color">#888888</color>
     <color name="primary_ripple">#22FF7A1A</color>
     <color name="favourite_ripple">#33FF7A1A</color>
-
+    <color name="input_stroke_default">#E0E0E0</color>
+    <color name="input_stroke_focused">#129575</color>
+    <color name="input_stroke_disabled">#EEEEEE</color>
+    <color name="input_background">#FAFAFA</color>
 </resources>

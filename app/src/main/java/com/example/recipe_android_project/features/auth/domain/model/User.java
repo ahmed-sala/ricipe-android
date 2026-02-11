@@ -4,17 +4,30 @@ import java.io.Serializable;
 
 public class User implements Serializable {
 
-    private static final long serialVersionUID = 1L;
 
     private String id;
     private String fullName;
     private String email;
     private String password;
     private boolean isLoggedIn;
+
+    private boolean pendingSync;
+    private String pendingSyncAction;
+    private long lastSyncedAt;
+
+    private boolean pendingPasswordSync;
+
+    private boolean pendingRegistrationSync;
+
     private long createdAt;
     private long updatedAt;
 
+
     public User() {
+        this.pendingSync = false;
+        this.pendingPasswordSync = false;
+        this.pendingRegistrationSync = false;
+        this.lastSyncedAt = 0;
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = System.currentTimeMillis();
     }
@@ -23,6 +36,10 @@ public class User implements Serializable {
         this.fullName = fullName;
         this.email = email;
         this.password = password;
+        this.pendingSync = false;
+        this.pendingPasswordSync = false;
+        this.pendingRegistrationSync = false;
+        this.lastSyncedAt = 0;
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = System.currentTimeMillis();
     }
@@ -48,6 +65,7 @@ public class User implements Serializable {
         return password != null && password.length() >= 6;
     }
 
+
     public String getFirstName() {
         if (fullName == null || fullName.isEmpty()) {
             return "";
@@ -66,18 +84,6 @@ public class User implements Serializable {
         }
         return "";
     }
-
-    public String getInitials() {
-        if (fullName == null || fullName.isEmpty()) {
-            return "";
-        }
-        String[] parts = fullName.trim().split("\\s+");
-        if (parts.length >= 2) {
-            return ("" + parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-        }
-        return ("" + parts[0].charAt(0)).toUpperCase();
-    }
-
 
 
 
@@ -116,7 +122,6 @@ public class User implements Serializable {
         this.updatedAt = System.currentTimeMillis();
     }
 
-
     public boolean isLoggedIn() {
         return isLoggedIn;
     }
@@ -124,6 +129,46 @@ public class User implements Serializable {
     public void setLoggedIn(boolean loggedIn) {
         isLoggedIn = loggedIn;
         this.updatedAt = System.currentTimeMillis();
+    }
+
+    public boolean isPendingSync() {
+        return pendingSync;
+    }
+
+    public void setPendingSync(boolean pendingSync) {
+        this.pendingSync = pendingSync;
+    }
+
+    public String getPendingSyncAction() {
+        return pendingSyncAction;
+    }
+
+    public void setPendingSyncAction(String pendingSyncAction) {
+        this.pendingSyncAction = pendingSyncAction;
+    }
+
+    public long getLastSyncedAt() {
+        return lastSyncedAt;
+    }
+
+    public void setLastSyncedAt(long lastSyncedAt) {
+        this.lastSyncedAt = lastSyncedAt;
+    }
+
+    public boolean isPendingPasswordSync() {
+        return pendingPasswordSync;
+    }
+
+    public void setPendingPasswordSync(boolean pendingPasswordSync) {
+        this.pendingPasswordSync = pendingPasswordSync;
+    }
+
+    public boolean isPendingRegistrationSync() {
+        return pendingRegistrationSync;
+    }
+
+    public void setPendingRegistrationSync(boolean pendingRegistrationSync) {
+        this.pendingRegistrationSync = pendingRegistrationSync;
     }
 
     public long getCreatedAt() {
@@ -168,6 +213,9 @@ public class User implements Serializable {
                 ", fullName='" + fullName + '\'' +
                 ", email='" + email + '\'' +
                 ", isLoggedIn=" + isLoggedIn +
+                ", pendingSync=" + pendingSync +
+                ", pendingPasswordSync=" + pendingPasswordSync +
+                ", pendingRegistrationSync=" + pendingRegistrationSync +
                 '}';
     }
 }

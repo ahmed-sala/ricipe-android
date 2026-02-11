@@ -1,0 +1,35 @@
+package com.example.recipe_android_project;
+
+import android.app.Application;
+import android.util.Log;
+
+import com.example.recipe_android_project.core.helper.SyncManager;
+
+import io.reactivex.rxjava3.plugins.RxJavaPlugins;
+
+public class RecipeApplication extends Application {
+    private SyncManager syncManager;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        setupRxJavaErrorHandler();
+
+        try {
+            syncManager = SyncManager.getInstance(this);
+            syncManager.startListening();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setupRxJavaErrorHandler() {
+        RxJavaPlugins.setErrorHandler(throwable -> {
+            if (throwable instanceof io.reactivex.rxjava3.exceptions.UndeliverableException) {
+                throwable = throwable.getCause();
+            }
+        });
+    }
+
+}
