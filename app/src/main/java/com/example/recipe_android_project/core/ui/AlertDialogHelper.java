@@ -22,6 +22,7 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 
 public class AlertDialogHelper {
+
     public interface OnDialogClickListener {
         void onClick();
     }
@@ -30,10 +31,13 @@ public class AlertDialogHelper {
         void onConfirm();
         void onCancel();
     }
+
     public interface OnPlanExistsDialogListener {
         void onReplace();
         void onCancel();
     }
+
+
     public static Dialog showErrorDialog(
             @NonNull Context context,
             @NonNull String title,
@@ -69,12 +73,15 @@ public class AlertDialogHelper {
 
         return dialog;
     }
+
     public static Dialog showErrorDialog(
             @NonNull Context context,
             @NonNull String message
     ) {
         return showErrorDialog(context, context.getString(R.string.oops), message, null);
     }
+
+
     public static Dialog showSuccessDialog(
             @NonNull Context context,
             @NonNull String title,
@@ -118,6 +125,67 @@ public class AlertDialogHelper {
     ) {
         return showSuccessDialog(context, context.getString(R.string.success), message, listener);
     }
+
+
+    public static Dialog showConfirmDialog(
+            @NonNull Context context,
+            @NonNull String title,
+            @NonNull String message,
+            @NonNull String positiveButtonText,
+            @NonNull String negativeButtonText,
+            @Nullable OnConfirmDialogListener listener
+    ) {
+        Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        View view = LayoutInflater.from(context).inflate(R.layout.dialog_confirm, null);
+        dialog.setContentView(view);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(
+                    (int) (context.getResources().getDisplayMetrics().widthPixels * 0.9),
+                    WindowManager.LayoutParams.WRAP_CONTENT
+            );
+            dialog.getWindow().setGravity(Gravity.CENTER);
+        }
+
+        TextView tvTitle = view.findViewById(R.id.tvTitle);
+        TextView tvMessage = view.findViewById(R.id.tvMessage);
+        MaterialButton btnPositive = view.findViewById(R.id.btnPositive);
+        MaterialButton btnNegative = view.findViewById(R.id.btnNegative);
+        MaterialCardView iconContainer = view.findViewById(R.id.iconContainer);
+
+        tvTitle.setText(title);
+        tvMessage.setText(message);
+        btnPositive.setText(positiveButtonText);
+        btnNegative.setText(negativeButtonText);
+
+        if (iconContainer != null) {
+            Animation pulseAnimation = AnimationUtils.loadAnimation(context, R.anim.pulse);
+            iconContainer.startAnimation(pulseAnimation);
+        }
+
+        btnPositive.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (listener != null) {
+                listener.onConfirm();
+            }
+        });
+
+        btnNegative.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (listener != null) {
+                listener.onCancel();
+            }
+        });
+
+        dialog.setCancelable(true);
+        dialog.show();
+
+        return dialog;
+    }
+
     public static Dialog showRemoveFavoriteDialog(
             @NonNull Context context,
             @NonNull String mealName,
@@ -236,6 +304,7 @@ public class AlertDialogHelper {
 
         return dialog;
     }
+
     public static Dialog showRemovePlanDialog(
             @NonNull Context context,
             @NonNull String mealName,
@@ -299,10 +368,71 @@ public class AlertDialogHelper {
 
         return dialog;
     }
+
+    public static Dialog showLogoutDialog(
+            @NonNull Context context,
+            @Nullable String userEmail,
+            @Nullable OnConfirmDialogListener listener
+    ) {
+        Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        View view = LayoutInflater.from(context).inflate(R.layout.dialog_logout, null);
+        dialog.setContentView(view);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(
+                    (int) (context.getResources().getDisplayMetrics().widthPixels * 0.9),
+                    WindowManager.LayoutParams.WRAP_CONTENT
+            );
+            dialog.getWindow().setGravity(Gravity.CENTER);
+        }
+
+        TextView tvMessage = view.findViewById(R.id.tvMessage);
+        TextView tvUserEmail = view.findViewById(R.id.tvUserEmail);
+        MaterialButton btnLogout = view.findViewById(R.id.btnLogout);
+        MaterialButton btnCancel = view.findViewById(R.id.btnCancel);
+        MaterialCardView iconContainer = view.findViewById(R.id.iconContainer);
+
+        tvMessage.setText(context.getString(R.string.logout_confirm_message));
+
+        if (userEmail != null && !userEmail.isEmpty()) {
+            tvUserEmail.setText(userEmail);
+            tvUserEmail.setVisibility(View.VISIBLE);
+        } else {
+            tvUserEmail.setVisibility(View.GONE);
+        }
+
+        if (iconContainer != null) {
+            Animation pulseAnimation = AnimationUtils.loadAnimation(context, R.anim.pulse);
+            iconContainer.startAnimation(pulseAnimation);
+        }
+
+        btnLogout.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (listener != null) {
+                listener.onConfirm();
+            }
+        });
+
+        btnCancel.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (listener != null) {
+                listener.onCancel();
+            }
+        });
+
+        dialog.setCancelable(true);
+        dialog.show();
+
+        return dialog;
+    }
     private static String capitalizeFirst(String text) {
         if (text == null || text.isEmpty()) return text;
         return text.substring(0, 1).toUpperCase() + text.substring(1).toLowerCase();
     }
+
     private static String formatDateForDisplay(String dateString) {
         if (dateString == null || dateString.isEmpty()) return "";
 

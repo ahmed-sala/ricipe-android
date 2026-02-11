@@ -107,4 +107,29 @@
 
     <string name="remove_meal_plan">Remove Meal Plan?</string>
     <string name="remove_plan_message">Are you sure you want to remove this meal from your plan?</string>
+    <string name="profile_image">Profile Image</string>
+    <string name="arrow">Arrow</string>
+    <string name="logout_icon">Logout Icon</string>
+    <string name="logout">Logout</string>
+    <string name="logout_confirm_message">Are you sure you want to logout? You will need to sign in again to access your account.</string>
+    <string name="changes_will_sync_automatically_when_you_re_back_online">Changes will sync automatically when you\'re back online</string>
+    <string name="enter_your_full_name">Enter your full name</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="back">Back</string>
+    <string name="change_password">Change Password</string>
+    <string name="change_password_description">Create a new password for your account. Make sure it\'s strong and secure.</string>
+    <string name="current_password">Current Password</string>
+    <string name="new_password">New Password</string>
+    <string name="confirm_new_password">Confirm New Password</string>
+    <string name="enter_current_password">Enter your current password</string>
+    <string name="enter_new_password">Enter your new password</string>
+    <string name="confirm_your_new_password">Confirm your new password</string>
+    <string name="password_requirements">Min. 8 characters with uppercase, lowercase, number &amp; special character</string>
+    <string name="password_will_sync_when_online">Password change will sync automatically when you\'re back online</string>
+    <string name="password_changed_successfully">Password changed successfully</string>
+    <string name="passwords_do_not_match">Passwords do not match</string>
+    <string name="password_too_weak">Password is too weak</string>
+    <string name="changing_password">Changing password…</string>
+
 </resources>

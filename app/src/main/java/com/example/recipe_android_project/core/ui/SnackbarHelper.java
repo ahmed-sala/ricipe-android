@@ -1,5 +1,6 @@
 package com.example.recipe_android_project.core.ui;
 
+import android.graphics.Color;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -44,12 +45,7 @@ public class SnackbarHelper {
         snackbar.show();
     }
 
-    public static void showInfo(@NonNull View view, @NonNull String message) {
-        Snackbar snackbar = Snackbar.make(view, message, Snackbar.LENGTH_SHORT);
-        snackbar.setBackgroundTint(ContextCompat.getColor(view.getContext(), R.color.info));
-        snackbar.setTextColor(ContextCompat.getColor(view.getContext(), R.color.white));
-        snackbar.show();
-    }
+
     public static void showUndoSnackbar(@NonNull View view,
                                         @NonNull String message,
                                         @NonNull String undoText,
@@ -63,6 +59,12 @@ public class SnackbarHelper {
             snackbar.setAction(undoText, onUndoClick);
         }
 
+        snackbar.show();
+    }
+    public static void showInfo(View view, String message) {
+        Snackbar snackbar = Snackbar.make(view, message, Snackbar.LENGTH_LONG);
+        snackbar.setBackgroundTint(ContextCompat.getColor(view.getContext(), R.color.info));
+        snackbar.setTextColor(Color.WHITE);
         snackbar.show();
     }
 }

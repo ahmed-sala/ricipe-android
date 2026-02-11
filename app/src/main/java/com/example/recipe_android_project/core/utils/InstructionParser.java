@@ -93,31 +93,4 @@ public class InstructionParser {
 
         return steps;
     }
-
-
-    public static List<InstructionStep> parseStepFormat(String rawInstructions) {
-        List<InstructionStep> steps = new ArrayList<>();
-
-        if (rawInstructions == null || rawInstructions.trim().isEmpty()) {
-            return steps;
-        }
-
-        String[] parts = rawInstructions.split("(?i)(?=STEP\\s*\\d+|(?<=\\n)\\d+\\.|(?<=\\n)\\d+\\))");
-
-        int stepNumber = 1;
-        for (String part : parts) {
-            String trimmed = part.trim();
-            if (trimmed.isEmpty()) continue;
-
-            trimmed = trimmed.replaceAll("(?i)^STEP\\s*\\d+[:.\\s]*", "");
-            trimmed = trimmed.replaceAll("^\\d+[.):]\\s*", "");
-            trimmed = trimmed.replaceAll("\\r\\n|\\r|\\n", " ").trim();
-
-            if (!trimmed.isEmpty()) {
-                steps.add(new InstructionStep(stepNumber++, trimmed));
-            }
-        }
-
-        return steps;
-    }
 }
