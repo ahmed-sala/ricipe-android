@@ -13,6 +13,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.example.recipe_android_project.features.auth.data.repository.AuthRepository;
+import com.example.recipe_android_project.features.profile.data.repository.ProfileRepository;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
@@ -29,6 +30,7 @@ public class SyncManager {
     private static volatile SyncManager instance;
 
     private AuthRepository authRepository;
+    private ProfileRepository profileRepository;
     private final CompositeDisposable compositeDisposable;
     private final Context context;
     private final ConnectivityManager connectivityManager;
@@ -41,7 +43,6 @@ public class SyncManager {
     private Runnable pendingSyncRunnable;
 
     private SyncManager(Context context) {
-        Log.e(TAG, "★★★ SyncManager CONSTRUCTOR ★★★");
 
         this.context = context.getApplicationContext();
         this.compositeDisposable = new CompositeDisposable();
@@ -49,7 +50,6 @@ public class SyncManager {
                 context.getSystemService(Context.CONNECTIVITY_SERVICE);
         this.mainHandler = new Handler(Looper.getMainLooper());
 
-        Log.e(TAG, "★★★ SyncManager CREATED ★★★");
     }
 
     public static SyncManager getInstance(Context context) {
@@ -73,50 +73,45 @@ public class SyncManager {
         }
         return authRepository;
     }
+    private ProfileRepository getProfileRepository() {
+        if (profileRepository == null) {
+            synchronized (this) {
+                if (profileRepository == null) {
+                    profileRepository = new ProfileRepository(context);
+                }
+            }
+        }
+        return profileRepository;
+    }
 
     public void startListening() {
-        Log.e(TAG, "★★★ startListening() ★★★");
         registerNetworkCallback();
 
         if (isNetworkReallyAvailable()) {
-            Log.e(TAG, "★★★ Network already available on start ★★★");
             scheduleSyncWithDelay();
         }
     }
 
-    public void stopListening() {
-        Log.e(TAG, "★★★ stopListening() ★★★");
-        unregisterNetworkCallback();
-        cancelPendingSync();
-    }
-
     private void registerNetworkCallback() {
-        Log.e(TAG, "★★★ registerNetworkCallback() - isRegistered: " + isCallbackRegistered + " ★★★");
 
         if (isCallbackRegistered) {
-            Log.e(TAG, "Already registered, skipping");
             return;
         }
 
         if (connectivityManager == null) {
-            Log.e(TAG, "ERROR: ConnectivityManager is null!");
             return;
         }
 
         networkCallback = new ConnectivityManager.NetworkCallback() {
             @Override
             public void onAvailable(@NonNull Network network) {
-                Log.e(TAG, "═══════════════════════════════════════");
-                Log.e(TAG, "★★★ NETWORK AVAILABLE ★★★");
-                Log.e(TAG, "═══════════════════════════════════════");
+
                 scheduleSyncWithDelay();
             }
 
             @Override
             public void onLost(@NonNull Network network) {
-                Log.e(TAG, "═══════════════════════════════════════");
-                Log.e(TAG, "★★★ NETWORK LOST ★★★");
-                Log.e(TAG, "═══════════════════════════════════════");
+
                 isSyncing = false;
                 cancelPendingSync();
             }
@@ -126,8 +121,6 @@ public class SyncManager {
                                               @NonNull NetworkCapabilities caps) {
                 boolean hasInternet = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
                 boolean validated = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
-
-                Log.e(TAG, "★★★ Capabilities changed - internet:" + hasInternet + " validated:" + validated + " ★★★");
 
                 if (hasInternet && validated && !isSyncing) {
                     scheduleSyncWithDelay();
@@ -142,10 +135,8 @@ public class SyncManager {
 
             connectivityManager.registerNetworkCallback(request, networkCallback);
             isCallbackRegistered = true;
-            Log.e(TAG, "★★★ NETWORK CALLBACK REGISTERED OK ★★★");
 
         } catch (Exception e) {
-            Log.e(TAG, "★★★ FAILED TO REGISTER CALLBACK: " + e.getMessage() + " ★★★");
             e.printStackTrace();
             isCallbackRegistered = false;
         }
@@ -155,9 +146,7 @@ public class SyncManager {
         if (networkCallback != null && connectivityManager != null && isCallbackRegistered) {
             try {
                 connectivityManager.unregisterNetworkCallback(networkCallback);
-                Log.e(TAG, "Callback unregistered");
             } catch (Exception e) {
-                Log.e(TAG, "Unregister error: " + e.getMessage());
             }
         }
         networkCallback = null;
@@ -166,7 +155,6 @@ public class SyncManager {
 
     private void scheduleSyncWithDelay() {
         cancelPendingSync();
-        Log.e(TAG, "★★★ Scheduling sync in " + SYNC_DELAY_MS + "ms ★★★");
 
         pendingSyncRunnable = this::syncAllPendingData;
         mainHandler.postDelayed(pendingSyncRunnable, SYNC_DELAY_MS);
@@ -191,25 +179,18 @@ public class SyncManager {
         boolean result = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
                 caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
 
-        Log.e(TAG, "isNetworkReallyAvailable: " + result);
         return result;
     }
 
     @SuppressLint("CheckResult")
     public void syncAllPendingData() {
-        Log.e(TAG, "═══════════════════════════════════════");
-        Log.e(TAG, "★★★ syncAllPendingData() ★★★");
-        Log.e(TAG, "isSyncing: " + isSyncing);
-        Log.e(TAG, "networkAvailable: " + isNetworkReallyAvailable());
-        Log.e(TAG, "═══════════════════════════════════════");
+
 
         if (isSyncing) {
-            Log.e(TAG, "Already syncing, skip");
             return;
         }
 
         if (!isNetworkReallyAvailable()) {
-            Log.e(TAG, "No network, skip");
             return;
         }
 
@@ -220,15 +201,12 @@ public class SyncManager {
             Log.e(TAG, "Error checking login: " + e.getMessage());
         }
 
-        Log.e(TAG, "User logged in: " + loggedIn);
 
         if (!loggedIn) {
-            Log.e(TAG, "User not logged in, skip sync");
             return;
         }
 
         isSyncing = true;
-        Log.e(TAG, "★★★ STARTING SYNC OPERATIONS ★★★");
 
         Disposable disposable = syncPendingRegistrations()
                 .doOnComplete(() -> Log.e(TAG, "✓ Registrations synced"))
@@ -241,11 +219,9 @@ public class SyncManager {
                 .subscribe(
                         () -> {
                             isSyncing = false;
-                            Log.e(TAG, "★★★ ALL SYNC COMPLETED ★★★");
                         },
                         error -> {
                             isSyncing = false;
-                            Log.e(TAG, "★★★ SYNC ERROR: " + error.getMessage() + " ★★★");
 
                             if (retryCount < MAX_RETRY_ATTEMPTS && isNetworkReallyAvailable()) {
                                 retryCount++;
@@ -258,7 +234,6 @@ public class SyncManager {
     }
 
     public void forceSyncNow() {
-        Log.e(TAG, "★★★ FORCE SYNC NOW ★★★");
         isSyncing = false;
         cancelPendingSync();
         syncAllPendingData();
@@ -274,19 +249,16 @@ public class SyncManager {
     private Completable syncPendingPasswordChanges() {
         return Completable.defer(() -> {
             if (!isNetworkReallyAvailable()) return Completable.complete();
-            return getAuthRepository().syncPendingPasswordChanges().onErrorComplete();
+            return getProfileRepository().syncPendingPasswordChanges().onErrorComplete();
         });
     }
 
     private Completable syncPendingUserUpdates() {
         return Completable.defer(() -> {
             if (!isNetworkReallyAvailable()) return Completable.complete();
-            return getAuthRepository().syncAllPendingUserUpdates().onErrorComplete();
+            return getProfileRepository().syncAllPendingUserUpdates().onErrorComplete();
         });
     }
-
-    public boolean isSyncing() { return isSyncing; }
-    public boolean isCallbackRegistered() { return isCallbackRegistered; }
 
     public void dispose() {
         compositeDisposable.clear();

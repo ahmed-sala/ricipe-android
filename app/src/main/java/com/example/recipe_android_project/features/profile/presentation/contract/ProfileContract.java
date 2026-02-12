@@ -1,7 +1,6 @@
 package com.example.recipe_android_project.features.profile.presentation.contract;
 
 import com.example.recipe_android_project.features.auth.domain.model.User;
-
 public interface ProfileContract {
 
     interface View {
@@ -12,6 +11,7 @@ public interface ProfileContract {
         void navigateToLogin();
         void showLogoutSuccess();
         void showLanguageChanged(String languageCode);
+        void showGuestMode();
     }
 
     interface Presenter {
@@ -20,5 +20,6 @@ public interface ProfileContract {
         void loadUserData();
         void logout();
         void changeLanguage(String languageCode);
+        boolean isUserLoggedIn();
     }
 }

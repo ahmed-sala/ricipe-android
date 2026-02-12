@@ -4,7 +4,7 @@ import android.content.Context;
 
 import com.example.recipe_android_project.features.auth.data.repository.AuthRepository;
 import com.example.recipe_android_project.features.auth.domain.model.User;
-import com.example.recipe_android_project.features.profile.data.datasource.repository.ProfileRepository;
+import com.example.recipe_android_project.features.profile.data.repository.ProfileRepository;
 import com.example.recipe_android_project.features.profile.presentation.contract.ProfileContract;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -42,8 +42,18 @@ public class ProfilePresenter implements ProfileContract.Presenter {
     }
 
     @Override
+    public boolean isUserLoggedIn() {
+        return authRepository.isSessionLoggedIn();
+    }
+
+    @Override
     public void loadUserData() {
         if (!isViewAttached()) return;
+
+        if (!isUserLoggedIn()) {
+            view.showGuestMode();
+            return;
+        }
 
         view.showLoading();
 

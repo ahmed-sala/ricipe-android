@@ -21,9 +21,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.navigation.Navigation;
 
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.helper.GoogleSignInHelper;
 import com.example.recipe_android_project.core.ui.AlertDialogHelper;
 import com.example.recipe_android_project.core.ui.LoadingDialog;
 import com.example.recipe_android_project.core.ui.SnackbarHelper;
@@ -51,6 +53,7 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
 
     private RegisterPresenter presenter;
     private LoadingDialog loadingDialog;
+    private GoogleSignInHelper googleSignInHelper;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -73,6 +76,7 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
         presenter = new RegisterPresenter(requireContext());
         presenter.attachView(this);
         loadingDialog = new LoadingDialog(requireContext());
+        googleSignInHelper = new GoogleSignInHelper(requireContext());
     }
 
     private void initViews(View view) {
@@ -89,7 +93,6 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
 
         passTil = view.findViewById(R.id.passTil);
         passEt = view.findViewById(R.id.passEt);
-
 
         btnRegister.setEnabled(false);
         if (passwordStrengthLayout != null) {
@@ -136,15 +139,34 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
             }
         });
 
-        btnGoogle.setOnClickListener(v ->
-                showErrorSnackbar("Google Sign-Up coming soon!")
-        );
+        btnGoogle.setOnClickListener(v -> startGoogleSignIn());
 
         btnRegister.setOnClickListener(v -> {
             String name = getTextFromEditText(nameEt);
             String email = getTextFromEditText(emailEt);
             String password = getTextFromEditText(passEt);
             presenter.register(name, email, password);
+        });
+    }
+
+    private void startGoogleSignIn() {
+        FragmentActivity activity = getActivity();
+        if (activity == null) return;
+
+        googleSignInHelper.signIn(activity, new GoogleSignInHelper.GoogleSignInCallback() {
+            @Override
+            public void onSuccess(String idToken) {
+                activity.runOnUiThread(() -> presenter.signInWithGoogle(idToken));
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                activity.runOnUiThread(() -> showErrorSnackbar(errorMessage));
+            }
+
+            @Override
+            public void onCancelled() {
+            }
         });
     }
 
@@ -219,7 +241,6 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
         return editText.getText() != null ? editText.getText().toString().trim() : "";
     }
 
-
     @Override
     public void showLoading(String message) {
         loadingDialog.show(message);
@@ -238,34 +259,22 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
     }
 
     @Override
-    public void showNameError(String message) {
-        nameTil.setError(message);
-    }
+    public void showNameError(String message) { nameTil.setError(message); }
 
     @Override
-    public void showEmailError(String message) {
-        emailTil.setError(message);
-    }
+    public void showEmailError(String message) { emailTil.setError(message); }
 
     @Override
-    public void showPasswordError(String message) {
-        passTil.setError(message);
-    }
+    public void showPasswordError(String message) { passTil.setError(message); }
 
     @Override
-    public void clearNameError() {
-        nameTil.setError(null);
-    }
+    public void clearNameError() { nameTil.setError(null); }
 
     @Override
-    public void clearEmailError() {
-        emailTil.setError(null);
-    }
+    public void clearEmailError() { emailTil.setError(null); }
 
     @Override
-    public void clearPasswordError() {
-        passTil.setError(null);
-    }
+    public void clearPasswordError() { passTil.setError(null); }
 
     @Override
     public void clearErrors() {
@@ -281,7 +290,8 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
 
     @Override
     public void showPasswordStrengthIndicator(PasswordStrength strength, String message) {
-        if (passwordStrengthLayout == null || passwordStrengthBar == null || passwordStrengthText == null) {
+        if (passwordStrengthLayout == null || passwordStrengthBar == null
+                || passwordStrengthText == null) {
             return;
         }
 
@@ -328,23 +338,13 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
 
     @Override
     public void showSuccessDialog(String message, Runnable onContinue) {
-        AlertDialogHelper.showSuccessDialog(
-                requireContext(),
-                message,
-                onContinue::run
-        );
+        AlertDialogHelper.showSuccessDialog(requireContext(), message, onContinue::run);
     }
 
     @Override
     public void showErrorSnackbar(String message) {
         SnackbarHelper.showError(requireView(), message);
     }
-
-    @Override
-    public void showSuccessSnackbar(String message) {
-        SnackbarHelper.showSuccess(requireView(), message);
-    }
-
     @Override
     public void navigateToHome() {
         Intent intent = new Intent(requireActivity(), DashboardActivity.class);
@@ -362,7 +362,9 @@ public class RegisterFragment extends Fragment implements RegisterContract.View 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-
+        if (googleSignInHelper != null) {
+            googleSignInHelper.cancel();
+        }
         if (loadingDialog != null) {
             loadingDialog.dismiss();
         }

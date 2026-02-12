@@ -16,6 +16,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.example.recipe_android_project.R;
 import com.google.android.material.button.MaterialButton;
@@ -36,7 +37,10 @@ public class AlertDialogHelper {
         void onReplace();
         void onCancel();
     }
-
+    public interface OnLanguageSelectedListener {
+        void onLanguageSelected(String languageCode);
+        void onCancel();
+    }
 
     public static Dialog showErrorDialog(
             @NonNull Context context,
@@ -464,5 +468,90 @@ public class AlertDialogHelper {
             case 3: return "rd";
             default: return "th";
         }
+    }
+    public static Dialog showLoginRequiredDialog(
+            @NonNull Context context,
+            @Nullable OnConfirmDialogListener listener
+    ) {
+        return showConfirmDialog(
+                context,
+                "Login Required",
+                "You need to log in to use this feature. Would you like to go to the login screen?",
+                "Go to Login",
+                "Cancel",
+                listener
+        );
+    }
+    public static Dialog showLanguageDialog(
+            @NonNull Context context,
+            @NonNull String currentLanguageCode,
+            @Nullable OnLanguageSelectedListener listener
+    ) {
+        Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        View view = LayoutInflater.from(context).inflate(
+                R.layout.dialog_language_selector, null);
+        dialog.setContentView(view);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(
+                    new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(
+                    (int) (context.getResources()
+                            .getDisplayMetrics().widthPixels * 0.9),
+                    WindowManager.LayoutParams.WRAP_CONTENT
+            );
+            dialog.getWindow().setGravity(Gravity.CENTER);
+        }
+
+        ConstraintLayout layoutEnglish = view.findViewById(R.id.layout_english);
+        ConstraintLayout layoutArabic = view.findViewById(R.id.layout_arabic);
+        ImageView ivEnglishCheck = view.findViewById(R.id.iv_english_check);
+        ImageView ivArabicCheck = view.findViewById(R.id.iv_arabic_check);
+        MaterialButton btnCancel = view.findViewById(R.id.btnCancel);
+        MaterialCardView iconContainer = view.findViewById(R.id.iconContainer);
+
+        // Show current selection
+        if (currentLanguageCode.equals("en")) {
+            ivEnglishCheck.setVisibility(View.VISIBLE);
+            ivArabicCheck.setVisibility(View.GONE);
+        } else {
+            ivEnglishCheck.setVisibility(View.GONE);
+            ivArabicCheck.setVisibility(View.VISIBLE);
+        }
+
+        // Animate icon
+        if (iconContainer != null) {
+            Animation pulseAnimation = AnimationUtils.loadAnimation(
+                    context, R.anim.pulse);
+            iconContainer.startAnimation(pulseAnimation);
+        }
+
+        layoutEnglish.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (!currentLanguageCode.equals("en") && listener != null) {
+                listener.onLanguageSelected("en");
+            }
+        });
+
+        layoutArabic.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (!currentLanguageCode.equals("ar") && listener != null) {
+                listener.onLanguageSelected("ar");
+            }
+        });
+
+        btnCancel.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (listener != null) {
+                listener.onCancel();
+            }
+        });
+
+        dialog.setCancelable(true);
+        dialog.show();
+
+        return dialog;
     }
 }

@@ -370,7 +370,43 @@ public class AuthRepository {
                 );
     }
 
+    public Single<User> signInWithGoogle(String idToken) {
+        return Single.defer(() -> {
+            if (!isNetworkAvailable()) {
+                return Single.error(
+                        new Exception("Google sign-in requires an internet connection"));
+            }
 
+            return remoteDatasource.signInWithGoogle(idToken)
+                    .timeout(FIREBASE_TIMEOUT_SECONDS * 2, TimeUnit.SECONDS)
+                    .flatMap(firebaseUser -> {
+                        String firebaseUid = firebaseUser.getId();
+                        String email = firebaseUser.getEmail();
+                        String fullName = firebaseUser.getFullName();
+
+                        return localDatasource.registerOrLoginGoogleUser(
+                                        firebaseUid, fullName, email)
+                                .doOnSuccess(localUser -> {
+                                    sessionManager.createSession(
+                                            localUser.getId(),
+                                            firebaseUid,
+                                            email,
+                                            fullName
+                                    );
+                                    syncDataOnLogin(firebaseUid, localUser.getId());
+                                })
+                                .onErrorResumeNext(localError -> {
+                                    Log.e(TAG, "Local save failed for Google user: "
+                                            + localError.getMessage());
+                                    sessionManager.createSessionWithFirebaseUid(
+                                            firebaseUid, email, fullName);
+                                    firebaseUser.setPassword(null);
+                                    return Single.just(firebaseUser);
+                                });
+                    })
+                    .map(UserMapper::toDomain);
+        }).subscribeOn(Schedulers.io());
+    }
     private boolean isNetworkError(Throwable error) {
         if (error instanceof TimeoutException) return true;
 

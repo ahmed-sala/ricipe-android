@@ -59,7 +59,7 @@ public class RegisterPresenter implements RegisterContract.Presenter {
         Disposable emailCheckDisposable = emailCheckSubject
                 .debounce(EMAIL_CHECK_DEBOUNCE_MS, TimeUnit.MILLISECONDS)
                 .distinctUntilChanged()
-                .filter(email -> isValidEmailFormat(email))
+                .filter(this::isValidEmailFormat)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::performEmailExistsCheck, Throwable::printStackTrace);
 
@@ -76,11 +76,11 @@ public class RegisterPresenter implements RegisterContract.Presenter {
     }
 
     private boolean isValidEmailFormat(String email) {
-        return email != null &&
-                email.length() > 5 &&
-                email.contains("@") &&
-                email.contains(".") &&
-                Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches();
+        return email != null
+                && email.length() > 5
+                && email.contains("@")
+                && email.contains(".")
+                && Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches();
     }
 
     @Override
@@ -104,7 +104,6 @@ public class RegisterPresenter implements RegisterContract.Presenter {
         return viewRef != null && viewRef.get() != null;
     }
 
-
     @Override
     public void onNameChanged(String name) {
         nameSubject.onNext(name != null ? name : "");
@@ -121,7 +120,6 @@ public class RegisterPresenter implements RegisterContract.Presenter {
     public void onPasswordChanged(String password) {
         passwordSubject.onNext(password != null ? password : "");
     }
-
 
     private void performNameValidation(String name) {
         if (!isViewAttached()) return;
@@ -184,9 +182,11 @@ public class RegisterPresenter implements RegisterContract.Presenter {
             return;
         }
 
-        PasswordValidationResult validationResult = PasswordHasher.validatePasswordStrength(password);
+        PasswordValidationResult validationResult =
+                PasswordHasher.validatePasswordStrength(password);
         PasswordStrength strengthLevel = validationResult.getStrengthLevel();
-        String strengthMessage = getStrengthMessage(strengthLevel, validationResult.getStrengthScore());
+        String strengthMessage = getStrengthMessage(
+                strengthLevel, validationResult.getStrengthScore());
 
         if (strengthLevel != null) {
             view.showPasswordStrengthIndicator(strengthLevel, strengthMessage);
@@ -216,7 +216,8 @@ public class RegisterPresenter implements RegisterContract.Presenter {
                             if (isViewAttached()) {
                                 isEmailAvailable = !exists;
                                 if (exists) {
-                                    getView().showEmailError("This email is already registered");
+                                    getView().showEmailError(
+                                            "This email is already registered");
                                 }
                                 updateRegisterButtonState();
                             }
@@ -229,7 +230,6 @@ public class RegisterPresenter implements RegisterContract.Presenter {
 
         disposables.add(disposable);
     }
-
 
     @Override
     public void validateName(String name) {
@@ -253,11 +253,8 @@ public class RegisterPresenter implements RegisterContract.Presenter {
         }
     }
 
-
     private String getStrengthMessage(PasswordStrength strength, int score) {
-        if (strength == null) {
-            return "";
-        }
+        if (strength == null) return "";
 
         switch (strength) {
             case WEAK:
@@ -273,7 +270,8 @@ public class RegisterPresenter implements RegisterContract.Presenter {
 
     private void updateRegisterButtonState() {
         if (isViewAttached()) {
-            boolean enabled = isNameValid && isEmailValid && isPasswordValid && isEmailAvailable;
+            boolean enabled = isNameValid && isEmailValid
+                    && isPasswordValid && isEmailAvailable;
             getView().setRegisterButtonEnabled(enabled);
         }
     }
@@ -305,7 +303,8 @@ public class RegisterPresenter implements RegisterContract.Presenter {
             view.showPasswordError("Password is required");
             isValid = false;
         } else {
-            PasswordValidationResult validationResult = PasswordHasher.validatePasswordStrength(password);
+            PasswordValidationResult validationResult =
+                    PasswordHasher.validatePasswordStrength(password);
             if (!validationResult.isValid()) {
                 view.showPasswordError(validationResult.getMessage());
                 isValid = false;
@@ -328,14 +327,16 @@ public class RegisterPresenter implements RegisterContract.Presenter {
 
         view.showLoading("Creating account…");
 
-        Disposable disposable = authRepository.register(fullName.trim(), email.trim(), password)
+        Disposable disposable = authRepository.register(
+                        fullName.trim(), email.trim(), password)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         user -> {
                             if (isViewAttached()) {
                                 getView().hideLoading();
                                 getView().showSuccessDialog(
-                                        "Welcome to MealMate, " + user.getFirstName() + "!",
+                                        "Welcome to MealMate, "
+                                                + user.getFirstName() + "!",
                                         () -> getView().navigateToHome()
                                 );
                             }
@@ -344,6 +345,42 @@ public class RegisterPresenter implements RegisterContract.Presenter {
                             if (isViewAttached()) {
                                 getView().hideLoading();
                                 getView().showErrorDialog(error.getMessage());
+                            }
+                        }
+                );
+
+        disposables.add(disposable);
+    }
+
+    @Override
+    public void signInWithGoogle(String idToken) {
+        if (!isViewAttached()) return;
+
+        RegisterContract.View view = getView();
+        view.showLoading("Signing in with Google…");
+
+        Disposable disposable = authRepository.signInWithGoogle(idToken)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        user -> {
+                            if (isViewAttached()) {
+                                getView().hideLoading();
+                                String name = user.getFirstName() != null
+                                        && !user.getFirstName().isEmpty()
+                                        ? user.getFirstName()
+                                        : "there";
+                                getView().showSuccessDialog(
+                                        "Welcome, " + name + "!",
+                                        () -> getView().navigateToHome()
+                                );
+                            }
+                        },
+                        error -> {
+                            if (isViewAttached()) {
+                                getView().hideLoading();
+                                getView().showErrorDialog(
+                                        "Google sign-in failed: "
+                                                + error.getMessage());
                             }
                         }
                 );

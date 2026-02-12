@@ -51,7 +51,7 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.VH> {
             Meal meal = items.get(i);
             if (meal != null && mealId.equals(meal.getId())) {
                 meal.setFavorite(isFavorite);
-                notifyItemChanged(i, "favorite"); // Partial update for better performance
+                notifyItemChanged(i, "favorite");
                 break;
             }
         }

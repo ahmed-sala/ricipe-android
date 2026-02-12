@@ -1,123 +1,239 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/dialog_background"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@drawable/bg_dialog_rounded"
+    android:padding="24dp">
 
-    <!-- Dialog Title -->
+    <!-- Icon Container (same style as your other dialogs) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/iconContainer"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        app:cardBackgroundColor="@color/primary_light"
+        app:cardCornerRadius="40dp"
+        app:cardElevation="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:strokeWidth="0dp">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center"
+                app:cardBackgroundColor="@color/primary_light"
+                app:cardCornerRadius="30dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <ImageView
+                    android:id="@+id/ivIcon"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_language"
+                    app:tint="@color/primary" />
+
+            </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Title -->
     <TextView
+        android:id="@+id/tvTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="Select Language"
-        android:textColor="@color/black"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+        android:layout_marginTop="24dp"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:text="Choose Language"
+        android:textColor="#1A1A1A"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/iconContainer" />
+
+    <!-- Message -->
+    <TextView
+        android:id="@+id/tvMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginHorizontal="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:text="Select your preferred language"
+        android:textColor="#757575"
+        android:textSize="15sp"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+    <!-- Divider -->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="20dp"
+        android:background="#F0F0F0"
+        app:layout_constraintTop_toBottomOf="@id/tvMessage" />
 
     <!-- English Option -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layout_english"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="60dp"
+        android:layout_marginTop="12dp"
         android:background="?attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true"
-        android:padding="12dp">
+        android:paddingHorizontal="16dp"
+        app:layout_constraintTop_toBottomOf="@id/divider">
 
-        <ImageView
-            android:id="@+id/iv_english_flag"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:contentDescription="English Flag"
-            android:src="@drawable/ic_flag_english"
+        <TextView
+            android:id="@+id/tvEnglishFlag"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🇺🇸"
+            android:textSize="24sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/tv_english"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginEnd="8dp"
-            android:text="English"
-            android:textColor="@color/black"
-            android:textSize="16sp"
+            android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/iv_english_check"
-            app:layout_constraintStart_toEndOf="@id/iv_english_flag"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintStart_toEndOf="@id/tvEnglishFlag"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="English"
+                android:textColor="#1A1A1A"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="English"
+                android:textColor="#757575"
+                android:textSize="13sp" />
+        </LinearLayout>
 
         <ImageView
             android:id="@+id/iv_english_check"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:contentDescription="Selected"
             android:src="@drawable/ic_check"
             android:visibility="gone"
+            app:tint="@color/primary"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/primary" />
+            app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Divider -->
+    <!-- Language Divider -->
     <View
+        android:id="@+id/divider_language"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginStart="48dp"
-        android:background="@color/divider" />
+        android:layout_marginHorizontal="16dp"
+        android:background="#F0F0F0"
+        app:layout_constraintTop_toBottomOf="@id/layout_english" />
 
     <!-- Arabic Option -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layout_arabic"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="60dp"
         android:background="?attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true"
-        android:padding="12dp">
+        android:paddingHorizontal="16dp"
+        app:layout_constraintTop_toBottomOf="@id/divider_language">
 
-        <ImageView
-            android:id="@+id/iv_arabic_flag"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:contentDescription="Arabic Flag"
-            android:src="@drawable/ic_flag_arabic"
+        <TextView
+            android:id="@+id/tvArabicFlag"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🇸🇦"
+            android:textSize="24sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/tv_arabic"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginEnd="8dp"
-            android:text="العربية"
-            android:textColor="@color/black"
-            android:textSize="16sp"
+            android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/iv_arabic_check"
-            app:layout_constraintStart_toEndOf="@id/iv_arabic_flag"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintStart_toEndOf="@id/tvArabicFlag"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="العربية"
+                android:textColor="#1A1A1A"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Arabic"
+                android:textColor="#757575"
+                android:textSize="13sp" />
+        </LinearLayout>
 
         <ImageView
             android:id="@+id/iv_arabic_check"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:contentDescription="Selected"
             android:src="@drawable/ic_check"
             android:visibility="gone"
+            app:tint="@color/primary"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/primary" />
+            app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-</LinearLayout>
+    <!-- Bottom Divider -->
+    <View
+        android:id="@+id/divider_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:background="#F0F0F0"
+        app:layout_constraintTop_toBottomOf="@id/layout_arabic" />
+
+    <!-- Cancel Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCancel"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="16dp"
+        android:fontFamily="sans-serif-medium"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:text="Cancel"
+        android:textColor="#757575"
+        android:textSize="15sp"
+        app:backgroundTint="#F5F5F5"
+        app:cornerRadius="14dp"
+        app:rippleColor="#E0E0E0"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/divider_bottom" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,5 +1,6 @@
 package com.example.recipe_android_project.features.onboarding.presentation.view;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -12,6 +13,7 @@ import androidx.core.content.ContextCompat;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.helper.LocaleHelper;
 import com.example.recipe_android_project.core.helper.SharedPreferencesManager;
 import com.example.recipe_android_project.features.auth.presentation.view.AuthActivity;
 import com.example.recipe_android_project.features.dashboard.presentation.view.DashboardActivity;
@@ -198,7 +200,10 @@ public class OnboardingActivity extends AppCompatActivity implements OnboardingC
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         finish();
     }
-
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase));
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
