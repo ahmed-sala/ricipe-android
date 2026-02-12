@@ -30,13 +30,17 @@ import com.google.android.material.appbar.MaterialToolbar;
 
 import java.util.List;
 
-public class FilterResultFragment extends Fragment implements FilterResultContract.View {
+public class FilterResultFragment extends Fragment
+        implements FilterResultContract.View {
 
     private MaterialToolbar toolbar;
     private RecyclerView rvFilterResults;
     private LottieAnimationView lottieLoading;
     private LinearLayout emptyStateContainer;
     private TextView tvEmptyMessage;
+
+    private LinearLayout layoutNoInternet;
+    private LottieAnimationView lottieNoInternet;
 
     private FilterResultPresenter presenter;
     private FilterResultAdapter adapter;
@@ -48,20 +52,24 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null) {
-            FilterResultFragmentArgs args = FilterResultFragmentArgs.fromBundle(getArguments());
+            FilterResultFragmentArgs args =
+                    FilterResultFragmentArgs.fromBundle(getArguments());
             filterParams = args.getFilterParams();
         }
     }
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_filter_result, container, false);
+        return inflater.inflate(
+                R.layout.fragment_filter_result, container, false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view,
+                              @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         initViews(view);
@@ -69,7 +77,12 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
         setupRecyclerView();
         setupPresenter();
 
-        loadData();
+        presenter.startNetworkMonitoring();
+
+        if (presenter.isNetworkCurrentlyAvailable()) {
+            loadData();
+        }
+
     }
 
     private void initViews(View view) {
@@ -78,6 +91,9 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
         lottieLoading = view.findViewById(R.id.lottieLoading);
         emptyStateContainer = view.findViewById(R.id.emptyStateContainer);
         tvEmptyMessage = view.findViewById(R.id.tvEmptyMessage);
+
+        layoutNoInternet = view.findViewById(R.id.layoutNoInternet);
+        lottieNoInternet = view.findViewById(R.id.lottieNoInternet);
     }
 
     private void setupToolbar() {
@@ -90,42 +106,54 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
     }
 
     private void setupRecyclerView() {
-        adapter = new FilterResultAdapter(new FilterResultAdapter.OnFilterResultClickListener() {
-            @Override
-            public void onMealClick(FilterResult filterResult, int position) {
-                presenter.onMealClicked(filterResult);
-            }
+        adapter = new FilterResultAdapter(
+                new FilterResultAdapter.OnFilterResultClickListener() {
+                    @Override
+                    public void onMealClick(FilterResult filterResult,
+                                            int position) {
+                        presenter.onMealClicked(filterResult);
+                    }
 
-            @Override
-            public void onFavoriteClick(FilterResult filterResult, int position, boolean isFavorite) {
-                handleFavoriteClick(filterResult, isFavorite);
-            }
-        });
+                    @Override
+                    public void onFavoriteClick(FilterResult filterResult,
+                                                int position,
+                                                boolean isFavorite) {
+                        handleFavoriteClick(filterResult, isFavorite);
+                    }
+                });
 
         String filterTag = "";
-        if (filterParams != null && filterParams.getFilterValue() != null) {
+        if (filterParams != null
+                && filterParams.getFilterValue() != null) {
             filterTag = filterParams.getFilterValue();
         }
         adapter.setFilterTag(filterTag);
 
-        rvFilterResults.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvFilterResults.setLayoutManager(
+                new LinearLayoutManager(requireContext()));
         rvFilterResults.setAdapter(adapter);
     }
 
     private void setupPresenter() {
-        SearchRepository repository = new SearchRepository(requireContext());
-        presenter = new FilterResultPresenter(repository);
+        SearchRepository repository =
+                new SearchRepository(requireContext());
+        presenter = new FilterResultPresenter(
+                repository, requireContext());
         presenter.attachView(this);
     }
 
     private void loadData() {
         if (filterParams != null && filterParams.isValid()) {
-            presenter.loadFilterResults(filterParams.getFilterType(), filterParams.getFilterValue());
+            presenter.loadFilterResults(
+                    filterParams.getFilterType(),
+                    filterParams.getFilterValue());
         } else {
             showError("Invalid filter parameters");
         }
     }
-    private void handleFavoriteClick(FilterResult filterResult, boolean currentlyFavorite) {
+
+    private void handleFavoriteClick(FilterResult filterResult,
+                                     boolean currentlyFavorite) {
         if (filterResult == null) return;
 
         if (!presenter.isUserLoggedIn()) {
@@ -139,8 +167,10 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
             presenter.addToFavorites(filterResult);
         }
     }
+
     private void showRemoveFavoriteDialog(FilterResult filterResult) {
-        String mealName = filterResult.getName() != null ? filterResult.getName() : "this meal";
+        String mealName = filterResult.getName() != null
+                ? filterResult.getName() : "this meal";
 
         AlertDialogHelper.showRemoveFavoriteDialog(
                 requireContext(),
@@ -153,24 +183,64 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
 
                     @Override
                     public void onCancel() {
-                        adapter.updateFavoriteStatus(filterResult.getId(), true);
+                        adapter.updateFavoriteStatus(
+                                filterResult.getId(), true);
                     }
                 }
         );
     }
 
+
+    @Override
+    public void showNoInternet() {
+        if (layoutNoInternet == null) return;
+
+        hideLoading();
+        hideEmptyState();
+
+        if (rvFilterResults != null) {
+            rvFilterResults.setVisibility(View.GONE);
+        }
+
+        layoutNoInternet.setVisibility(View.VISIBLE);
+        if (lottieNoInternet != null) {
+            lottieNoInternet.playAnimation();
+        }
+    }
+
+    @Override
+    public void hideNoInternet() {
+        if (layoutNoInternet == null) return;
+
+        layoutNoInternet.setVisibility(View.GONE);
+        if (lottieNoInternet != null) {
+            lottieNoInternet.cancelAnimation();
+        }
+
+        if (rvFilterResults != null) {
+            rvFilterResults.setVisibility(View.VISIBLE);
+        }
+    }
+
+
     @Override
     public void showLoading() {
+        if (lottieLoading == null) return;
         lottieLoading.setVisibility(View.VISIBLE);
         lottieLoading.playAnimation();
-        rvFilterResults.setVisibility(View.GONE);
+        if (rvFilterResults != null) {
+            rvFilterResults.setVisibility(View.GONE);
+        }
     }
 
     @Override
     public void hideLoading() {
+        if (lottieLoading == null) return;
         lottieLoading.cancelAnimation();
         lottieLoading.setVisibility(View.GONE);
-        rvFilterResults.setVisibility(View.VISIBLE);
+        if (rvFilterResults != null) {
+            rvFilterResults.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -180,14 +250,22 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
 
     @Override
     public void showEmptyState(String message) {
-        emptyStateContainer.setVisibility(View.VISIBLE);
-        tvEmptyMessage.setText(message);
-        rvFilterResults.setVisibility(View.GONE);
+        if (emptyStateContainer != null) {
+            emptyStateContainer.setVisibility(View.VISIBLE);
+        }
+        if (tvEmptyMessage != null) {
+            tvEmptyMessage.setText(message);
+        }
+        if (rvFilterResults != null) {
+            rvFilterResults.setVisibility(View.GONE);
+        }
     }
 
     @Override
     public void hideEmptyState() {
-        emptyStateContainer.setVisibility(View.GONE);
+        if (emptyStateContainer != null) {
+            emptyStateContainer.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -199,7 +277,8 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
 
     @Override
     public void navigateBack() {
-        NavController navController = Navigation.findNavController(requireView());
+        NavController navController =
+                Navigation.findNavController(requireView());
         navController.popBackStack();
     }
 
@@ -207,25 +286,30 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
     public void navigateToMealDetail(String mealId) {
         if (mealId == null) return;
 
-        FilterResultFragmentDirections.ActionFilterResultFragmentToMealDetailFragment action =
-                FilterResultFragmentDirections.actionFilterResultFragmentToMealDetailFragment(mealId);
+        FilterResultFragmentDirections
+                .ActionFilterResultFragmentToMealDetailFragment action =
+                FilterResultFragmentDirections
+                        .actionFilterResultFragmentToMealDetailFragment(
+                                mealId);
 
-        NavController navController = Navigation.findNavController(requireView());
+        NavController navController =
+                Navigation.findNavController(requireView());
         navController.navigate(action);
     }
-
 
     @Override
     public void onFavoriteAdded(FilterResult filterResult) {
         if (getView() != null) {
-            SnackbarHelper.showSuccess(getView(), getString(R.string.added_to_favorites));
+            SnackbarHelper.showSuccess(getView(),
+                    getString(R.string.added_to_favorites));
         }
     }
 
     @Override
     public void onFavoriteRemoved(FilterResult filterResult) {
         if (getView() != null) {
-            SnackbarHelper.showSuccess(getView(), getString(R.string.removed_from_favorites));
+            SnackbarHelper.showSuccess(getView(),
+                    getString(R.string.removed_from_favorites));
         }
     }
 
@@ -237,7 +321,8 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
     }
 
     @Override
-    public void updateFilterResultFavoriteStatus(int mealId, boolean isFavorite) {
+    public void updateFilterResultFavoriteStatus(int mealId,
+                                                 boolean isFavorite) {
         adapter.updateFavoriteStatus(mealId, isFavorite);
     }
 
@@ -248,8 +333,10 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
                 new AlertDialogHelper.OnConfirmDialogListener() {
                     @Override
                     public void onConfirm() {
-                        Intent intent = new Intent(requireContext(), AuthActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        Intent intent = new Intent(
+                                requireContext(), AuthActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                                | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                         startActivity(intent);
                         if (getActivity() != null) {
                             getActivity().finish();
@@ -264,14 +351,29 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
     }
 
 
-
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
+
+        if (lottieNoInternet != null) {
+            lottieNoInternet.cancelAnimation();
+        }
+        if (lottieLoading != null) {
+            lottieLoading.cancelAnimation();
+        }
+
         if (presenter != null) {
             presenter.detachView();
             presenter.dispose();
         }
+
+        toolbar = null;
+        rvFilterResults = null;
+        lottieLoading = null;
+        emptyStateContainer = null;
+        tvEmptyMessage = null;
+        layoutNoInternet = null;
+        lottieNoInternet = null;
     }
 }

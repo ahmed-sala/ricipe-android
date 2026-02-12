@@ -62,7 +62,7 @@ public class SearchFragment extends Fragment implements
     private static final int TAB_INGREDIENTS = 1;
     private static final int TAB_COUNTRY = 2;
 
-    private SearchContract.Presenter presenter;
+    private SearchPresenter presenter;
 
     private MaterialCardView searchCard;
     private EditText etSearch;
@@ -88,6 +88,9 @@ public class SearchFragment extends Fragment implements
     private LottieAnimationView lottieEmptyState;
     private TextView tvEmptyTitle;
     private TextView tvEmptyMessage;
+
+    private LinearLayout layoutNoInternet;
+    private LottieAnimationView lottieNoInternet;
 
     private MealAdapter mealAdapter;
     private IngredientAdapter ingredientAdapter;
@@ -119,12 +122,18 @@ public class SearchFragment extends Fragment implements
         setupRecyclerViews();
 
         presenter.attachView(this);
-        presenter.loadInitialData();
+
+        presenter.startNetworkMonitoring();
+
+        if (presenter.isNetworkCurrentlyAvailable()) {
+            presenter.loadInitialData();
+        }
+
     }
 
     private void initPresenter() {
         SearchRepository repository = new SearchRepository(requireContext());
-        presenter = new SearchPresenter(repository);
+        presenter = new SearchPresenter(repository, requireContext());
     }
 
     private void initViews(View view) {
@@ -152,6 +161,9 @@ public class SearchFragment extends Fragment implements
         lottieEmptyState = view.findViewById(R.id.lottieEmptyState);
         tvEmptyTitle = view.findViewById(R.id.tvEmptyTitle);
         tvEmptyMessage = view.findViewById(R.id.tvEmptyMessage);
+
+        layoutNoInternet = view.findViewById(R.id.layoutNoInternet);
+        lottieNoInternet = view.findViewById(R.id.lottieNoInternet);
     }
 
     private void setupChips() {
@@ -195,11 +207,13 @@ public class SearchFragment extends Fragment implements
     private void setupSearch() {
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            public void beforeTextChanged(CharSequence s, int start,
+                                          int count, int after) {
             }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            public void onTextChanged(CharSequence s, int start,
+                                      int before, int count) {
                 updateSearchIcons(s != null && s.length() > 0);
             }
 
@@ -259,22 +273,60 @@ public class SearchFragment extends Fragment implements
     }
 
     private void setupRecyclerViews() {
-        rvMeals.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvMeals.setLayoutManager(
+                new LinearLayoutManager(requireContext()));
         mealAdapter = new MealAdapter(mealsList, this);
         rvMeals.setAdapter(mealAdapter);
 
-        rvIngredients.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        rvIngredients.setLayoutManager(
+                new GridLayoutManager(requireContext(), 2));
         ingredientAdapter = new IngredientAdapter(ingredientsList, this);
         rvIngredients.setAdapter(ingredientAdapter);
 
-        rvCountry.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        rvCountry.setLayoutManager(
+                new GridLayoutManager(requireContext(), 2));
         areaAdapter = new AreaAdapter(areasList, this);
         rvCountry.setAdapter(areaAdapter);
     }
 
 
     @Override
+    public void showNoInternet() {
+        if (layoutNoInternet == null) return;
+
+        hideLoading();
+        hideEmptyState();
+        hideSearchPlaceholder();
+
+        if (contentContainer != null) {
+            contentContainer.setVisibility(View.GONE);
+        }
+
+
+        layoutNoInternet.setVisibility(View.VISIBLE);
+        if (lottieNoInternet != null) {
+            lottieNoInternet.playAnimation();
+        }
+    }
+
+    @Override
+    public void hideNoInternet() {
+        if (layoutNoInternet == null) return;
+
+        layoutNoInternet.setVisibility(View.GONE);
+        if (lottieNoInternet != null) {
+            lottieNoInternet.cancelAnimation();
+        }
+
+        if (contentContainer != null) {
+            contentContainer.setVisibility(View.VISIBLE);
+        }
+    }
+
+
+    @Override
     public void showLoading() {
+        if (lottieLoading == null) return;
         lottieLoading.setVisibility(View.VISIBLE);
         lottieLoading.playAnimation();
         hideEmptyState();
@@ -282,6 +334,7 @@ public class SearchFragment extends Fragment implements
 
     @Override
     public void hideLoading() {
+        if (lottieLoading == null) return;
         lottieLoading.setVisibility(View.GONE);
         lottieLoading.cancelAnimation();
     }
@@ -322,19 +375,22 @@ public class SearchFragment extends Fragment implements
     public void showEmptyMeals() {
         rvMeals.setVisibility(View.GONE);
         hideSearchPlaceholder();
-        showEmptyState("No meals found", "Try searching with different keywords");
+        showEmptyState("No meals found",
+                "Try searching with different keywords");
     }
 
     @Override
     public void showEmptyIngredients() {
         rvIngredients.setVisibility(View.GONE);
-        showEmptyState("No ingredients found", "Try searching with different keywords");
+        showEmptyState("No ingredients found",
+                "Try searching with different keywords");
     }
 
     @Override
     public void showEmptyAreas() {
         rvCountry.setVisibility(View.GONE);
-        showEmptyState("No countries found", "Try searching with different keywords");
+        showEmptyState("No countries found",
+                "Try searching with different keywords");
     }
 
     @Override
@@ -346,26 +402,25 @@ public class SearchFragment extends Fragment implements
 
     @Override
     public void showSearchPlaceholder() {
+        if (searchPlaceholderContainer == null) return;
         searchPlaceholderContainer.setVisibility(View.VISIBLE);
-        rvMeals.setVisibility(View.GONE);
+        if (rvMeals != null) rvMeals.setVisibility(View.GONE);
         hideEmptyState();
     }
 
     @Override
     public void hideSearchPlaceholder() {
-        searchPlaceholderContainer.setVisibility(View.GONE);
+        if (searchPlaceholderContainer != null) {
+            searchPlaceholderContainer.setVisibility(View.GONE);
+        }
     }
 
     private void showEmptyState(String title, String message) {
         if (emptyStateContainer != null) {
             emptyStateContainer.setVisibility(View.VISIBLE);
             lottieEmptyState.playAnimation();
-            if (tvEmptyTitle != null) {
-                tvEmptyTitle.setText(title);
-            }
-            if (tvEmptyMessage != null) {
-                tvEmptyMessage.setText(message);
-            }
+            if (tvEmptyTitle != null) tvEmptyTitle.setText(title);
+            if (tvEmptyMessage != null) tvEmptyMessage.setText(message);
         }
     }
 
@@ -380,9 +435,11 @@ public class SearchFragment extends Fragment implements
     @Override
     public void navigateToFilterResult(FilterParams filterParams) {
         SearchFragmentDirections.ActionSearchFragmentToFilterResultFragment action =
-                SearchFragmentDirections.actionSearchFragmentToFilterResultFragment(filterParams);
+                SearchFragmentDirections
+                        .actionSearchFragmentToFilterResultFragment(filterParams);
 
-        NavController navController = Navigation.findNavController(requireView());
+        NavController navController =
+                Navigation.findNavController(requireView());
         navController.navigate(action);
     }
 
@@ -391,24 +448,27 @@ public class SearchFragment extends Fragment implements
         if (mealId == null) return;
 
         SearchFragmentDirections.ActionSearchFragmentToMealDetailFragment action =
-                SearchFragmentDirections.actionSearchFragmentToMealDetailFragment(mealId);
+                SearchFragmentDirections
+                        .actionSearchFragmentToMealDetailFragment(mealId);
 
-        NavController navController = Navigation.findNavController(requireView());
+        NavController navController =
+                Navigation.findNavController(requireView());
         navController.navigate(action);
     }
-
 
     @Override
     public void onFavoriteAdded(Meal meal) {
         if (getView() != null) {
-            SnackbarHelper.showSuccess(getView(), getString(R.string.added_to_favorites));
+            SnackbarHelper.showSuccess(getView(),
+                    getString(R.string.added_to_favorites));
         }
     }
 
     @Override
     public void onFavoriteRemoved(Meal meal) {
         if (getView() != null) {
-            SnackbarHelper.showSuccess(getView(), getString(R.string.removed_from_favorites));
+            SnackbarHelper.showSuccess(getView(),
+                    getString(R.string.removed_from_favorites));
         }
     }
 
@@ -432,8 +492,10 @@ public class SearchFragment extends Fragment implements
                 new AlertDialogHelper.OnConfirmDialogListener() {
                     @Override
                     public void onConfirm() {
-                        Intent intent = new Intent(requireContext(), AuthActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        Intent intent = new Intent(
+                                requireContext(), AuthActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                                | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                         startActivity(intent);
                         if (getActivity() != null) {
                             getActivity().finish();
@@ -454,7 +516,8 @@ public class SearchFragment extends Fragment implements
     }
 
     @Override
-    public void onFavoriteClick(Meal meal, int position, boolean currentlyFavorite) {
+    public void onFavoriteClick(Meal meal, int position,
+                                boolean currentlyFavorite) {
         handleFavoriteClick(meal);
     }
 
@@ -474,7 +537,8 @@ public class SearchFragment extends Fragment implements
     }
 
     private void showRemoveFavoriteDialog(Meal meal) {
-        String mealName = meal.getName() != null ? meal.getName() : "this meal";
+        String mealName = meal.getName() != null
+                ? meal.getName() : "this meal";
 
         AlertDialogHelper.showRemoveFavoriteDialog(
                 requireContext(),
@@ -492,7 +556,6 @@ public class SearchFragment extends Fragment implements
         );
     }
 
-
     @Override
     public void onAreaClick(Area area) {
         presenter.onAreaClicked(area);
@@ -506,7 +569,8 @@ public class SearchFragment extends Fragment implements
 
     private void startVoiceSearch() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Search for meals...");
         try {
             startActivityForResult(intent, VOICE_SEARCH_REQUEST_CODE);
@@ -516,10 +580,13 @@ public class SearchFragment extends Fragment implements
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    public void onActivityResult(int requestCode, int resultCode,
+                                 @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == VOICE_SEARCH_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
-            ArrayList<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+        if (requestCode == VOICE_SEARCH_REQUEST_CODE
+                && resultCode == Activity.RESULT_OK && data != null) {
+            ArrayList<String> results =
+                    data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             if (results != null && !results.isEmpty()) {
                 String voiceText = results.get(0);
                 etSearch.setText(voiceText);
@@ -532,7 +599,42 @@ public class SearchFragment extends Fragment implements
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
+        if (lottieNoInternet != null) {
+            lottieNoInternet.cancelAnimation();
+        }
+        if (lottieLoading != null) {
+            lottieLoading.cancelAnimation();
+        }
+        if (lottieEmptyState != null) {
+            lottieEmptyState.cancelAnimation();
+        }
+
         presenter.detachView();
         presenter.dispose();
+
+        searchCard = null;
+        etSearch = null;
+        icSearch = null;
+        icMicrophone = null;
+        icClear = null;
+        chipGroup = null;
+        chipMeals = null;
+        chipIngredients = null;
+        chipCountry = null;
+        contentContainer = null;
+        mealsContent = null;
+        searchPlaceholderContainer = null;
+        imgSearchPlaceholder = null;
+        rvMeals = null;
+        rvIngredients = null;
+        rvCountry = null;
+        lottieLoading = null;
+        emptyStateContainer = null;
+        lottieEmptyState = null;
+        tvEmptyTitle = null;
+        tvEmptyMessage = null;
+        layoutNoInternet = null;
+        lottieNoInternet = null;
     }
 }

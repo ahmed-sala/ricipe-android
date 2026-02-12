@@ -1,12 +1,11 @@
 package com.example.recipe_android_project.features.onboarding.presentation.presnter;
 
-
-
 import com.example.recipe_android_project.features.onboarding.presentation.contract.OnboardingContract;
 import com.example.recipe_android_project.features.onboarding.data.repository.OnboardingRepository;
 import com.example.recipe_android_project.features.onboarding.domain.model.OnboardingItem;
 
 import java.util.List;
+
 public class OnboardingPresenter implements OnboardingContract.Presenter {
 
     private OnboardingContract.View view;
@@ -62,7 +61,7 @@ public class OnboardingPresenter implements OnboardingContract.Presenter {
     private void completeOnboarding() {
         repository.setOnboardingCompleted();
         if (view != null) {
-            view.navigateToMain();
+            view.navigateToMain();  // Always goes to Auth
         }
     }
 
@@ -79,10 +78,5 @@ public class OnboardingPresenter implements OnboardingContract.Presenter {
     @Override
     public void onDestroy() {
         view = null;
-    }
-
-    @Override
-    public boolean isLoggedIn() {
-        return repository.isLoggedIn();
     }
 }

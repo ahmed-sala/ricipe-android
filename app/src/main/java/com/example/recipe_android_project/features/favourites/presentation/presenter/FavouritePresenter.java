@@ -2,7 +2,6 @@ package com.example.recipe_android_project.features.favourites.presentation.pres
 
 import android.content.Context;
 
-import com.example.recipe_android_project.core.helper.BasePresenter;
 import com.example.recipe_android_project.features.favourites.data.repository.FavouritesRepository;
 import com.example.recipe_android_project.features.favourites.presentation.contract.FavouriteContract;
 import com.example.recipe_android_project.features.home.model.Meal;
@@ -18,8 +17,9 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.PublishSubject;
 
-public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
-        implements FavouriteContract.Presenter {
+public class FavouritePresenter implements FavouriteContract.Presenter {
+
+    private FavouriteContract.View view;
 
     private final FavouritesRepository repository;
     private final CompositeDisposable disposables = new CompositeDisposable();
@@ -44,6 +44,20 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
     }
 
 
+    public void attachView(FavouriteContract.View view) {
+        this.view = view;
+    }
+
+    public void detachView() {
+        this.view = null;
+    }
+
+    private boolean isViewAttached() {
+        return view != null;
+    }
+
+
+
     private void setupSearchDebounce() {
         Disposable searchDisposable = searchSubject
                 .debounce(DEBOUNCE_TIMEOUT, TimeUnit.MILLISECONDS)
@@ -53,20 +67,23 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
                         this::filterFavorites,
                         throwable -> {
                             if (isViewAttached()) {
-                                getView().showError("Search error: " + throwable.getMessage());
+                                view.showError(
+                                        "Search error: "
+                                                + throwable.getMessage());
                             }
                         }
                 );
         disposables.add(searchDisposable);
     }
 
+
+
     @Override
     public void loadFavorites() {
         if (isRemovingLastItem) return;
-
         if (!isViewAttached()) return;
 
-        getView().showLoading();
+        view.showLoading();
 
         Disposable disposable = repository.getFavorites()
                 .subscribeOn(Schedulers.io())
@@ -74,7 +91,7 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
                 .subscribe(
                         meals -> {
                             if (isViewAttached()) {
-                                getView().hideLoading();
+                                view.hideLoading();
                                 allFavorites = new ArrayList<>(meals);
 
                                 for (Meal meal : allFavorites) {
@@ -86,14 +103,18 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
                         },
                         throwable -> {
                             if (isViewAttached()) {
-                                getView().hideLoading();
-                                getView().showError(getErrorMessage(throwable, "Failed to load favorites"));
-                                getView().showEmptyState();
+                                view.hideLoading();
+                                view.showError(
+                                        getErrorMessage(throwable,
+                                                "Failed to load favorites"));
+                                view.showEmptyState();
                             }
                         }
                 );
         disposables.add(disposable);
     }
+
+
 
     @Override
     public void onSearchQueryChanged(String query) {
@@ -106,16 +127,16 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
 
         if (allFavorites.isEmpty()) {
             if (query == null || query.isEmpty()) {
-                getView().showEmptyState();
+                view.showEmptyState();
             } else {
-                getView().showSearchEmpty(query);
+                view.showSearchEmpty(query);
             }
             return;
         }
 
         if (query == null || query.trim().isEmpty()) {
-            getView().hideEmptyState();
-            getView().showFavorites(new ArrayList<>(allFavorites));
+            view.hideEmptyState();
+            view.showFavorites(new ArrayList<>(allFavorites));
             return;
         }
 
@@ -129,35 +150,39 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
         }
 
         if (filtered.isEmpty()) {
-            getView().showSearchEmpty(query);
+            view.showSearchEmpty(query);
         } else {
-            getView().hideEmptyState();
-            getView().showFavorites(filtered);
+            view.hideEmptyState();
+            view.showFavorites(filtered);
         }
     }
 
     private boolean matchesQuery(Meal meal, String query) {
         if (meal == null) return false;
 
-        if (meal.getName() != null && meal.getName().toLowerCase().contains(query)) {
+        if (meal.getName() != null
+                && meal.getName().toLowerCase().contains(query)) {
             return true;
         }
 
-        if (meal.getCategory() != null && meal.getCategory().toLowerCase().contains(query)) {
+        if (meal.getCategory() != null
+                && meal.getCategory().toLowerCase().contains(query)) {
             return true;
         }
 
-        if (meal.getArea() != null && meal.getArea().toLowerCase().contains(query)) {
+        if (meal.getArea() != null
+                && meal.getArea().toLowerCase().contains(query)) {
             return true;
         }
 
         return false;
     }
 
+
     @Override
     public void removeFromFavorites(Meal meal) {
         if (!isViewAttached() || meal == null) return;
-        getView().showRemoveConfirmDialog(meal);
+        view.showRemoveConfirmDialog(meal);
     }
 
     @Override
@@ -178,14 +203,15 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
         allFavorites.remove(pendingRemovePosition);
 
         if (wasLastItem) {
-            getView().showEmptyState();
+            view.showEmptyState();
         } else {
             filterFavorites(currentQuery);
         }
 
-        getView().showUndoSnackbar(meal);
+        view.showUndoSnackbar(meal);
 
-        pendingRemoveDisposable = Observable.timer(UNDO_TIMEOUT, TimeUnit.MILLISECONDS)
+        pendingRemoveDisposable = Observable
+                .timer(UNDO_TIMEOUT, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -206,11 +232,14 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
         return -1;
     }
 
+
+
     @Override
     public void undoRemove() {
         if (pendingRemoveMeal == null) return;
 
-        if (pendingRemoveDisposable != null && !pendingRemoveDisposable.isDisposed()) {
+        if (pendingRemoveDisposable != null
+                && !pendingRemoveDisposable.isDisposed()) {
             pendingRemoveDisposable.dispose();
             pendingRemoveDisposable = null;
         }
@@ -222,7 +251,8 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
         pendingRemovePosition = -1;
         isRemovingLastItem = false;
 
-        if (restorePosition >= 0 && restorePosition <= allFavorites.size()) {
+        if (restorePosition >= 0
+                && restorePosition <= allFavorites.size()) {
             allFavorites.add(restorePosition, restoredMeal);
         } else {
             allFavorites.add(0, restoredMeal);
@@ -230,11 +260,14 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
 
         if (isViewAttached()) {
             filterFavorites(currentQuery);
-            getView().onFavoriteRestored(restoredMeal);
+            view.onFavoriteRestored(restoredMeal);
         }
     }
+
+
     private void executePendingRemoveImmediately() {
-        if (pendingRemoveDisposable != null && !pendingRemoveDisposable.isDisposed()) {
+        if (pendingRemoveDisposable != null
+                && !pendingRemoveDisposable.isDisposed()) {
             pendingRemoveDisposable.dispose();
             pendingRemoveDisposable = null;
         }
@@ -248,7 +281,8 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
         pendingRemoveMeal = null;
         pendingRemovePosition = -1;
 
-        Disposable disposable = repository.removeFromFavorites(mealToRemove)
+        Disposable disposable = repository
+                .removeFromFavorites(mealToRemove)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -260,22 +294,29 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
                             if (isViewAttached()) {
                                 allFavorites.add(0, mealToRemove);
                                 filterFavorites(currentQuery);
-                                getView().onRemoveError(getErrorMessage(throwable, "Failed to remove favorite"));
+                                view.onRemoveError(
+                                        getErrorMessage(throwable,
+                                                "Failed to remove favorite"));
                             }
                         }
                 );
         disposables.add(disposable);
     }
 
-    private String getErrorMessage(Throwable throwable, String defaultMessage) {
+
+
+    private String getErrorMessage(Throwable throwable,
+                                   String defaultMessage) {
         if (throwable == null) return defaultMessage;
 
         String message = throwable.getMessage();
-        if (message == null || message.isEmpty()) return defaultMessage;
+        if (message == null || message.isEmpty())
+            return defaultMessage;
 
         if (throwable instanceof java.net.UnknownHostException) {
             return "No internet connection";
-        } else if (throwable instanceof java.net.SocketTimeoutException) {
+        } else if (throwable instanceof
+                java.net.SocketTimeoutException) {
             return "Connection timed out";
         } else if (throwable instanceof java.io.IOException) {
             return "Network error occurred";
@@ -283,6 +324,8 @@ public class FavouritePresenter extends BasePresenter<FavouriteContract.View>
 
         return message;
     }
+
+
 
     @Override
     public void detach() {

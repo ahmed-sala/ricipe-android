@@ -3,6 +3,7 @@ package com.example.recipe_android_project.features.onboarding.presentation.cont
 import com.example.recipe_android_project.features.onboarding.domain.model.OnboardingItem;
 
 import java.util.List;
+
 public interface OnboardingContract {
 
     interface View {
@@ -11,8 +12,8 @@ public interface OnboardingContract {
         void showNextButton();
         void showGetStartedButton();
         void navigateToNextPage();
-        void navigateToMain();
-        void navigateToHome();
+        void navigateToMain();  // Only Auth navigation after onboarding
+        // ❌ Removed: navigateToHome()
     }
 
     interface Presenter {
@@ -23,7 +24,7 @@ public interface OnboardingContract {
         void onGetStartedClicked();
         int getTotalPages();
         boolean isOnboardingCompleted();
+        // ❌ Removed: isLoggedIn()
         void onDestroy();
-        boolean isLoggedIn();
     }
 }

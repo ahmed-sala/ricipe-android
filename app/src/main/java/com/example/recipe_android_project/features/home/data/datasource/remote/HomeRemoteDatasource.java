@@ -2,6 +2,8 @@ package com.example.recipe_android_project.features.home.data.datasource.remote;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 
 import com.example.recipe_android_project.core.config.RetrofitClient;
@@ -27,7 +29,7 @@ public class HomeRemoteDatasource {
 
     private final FirebaseFirestore firestore;
     private final Context context;
-
+    private ConnectivityManager connectivityManager;
     public HomeRemoteDatasource(Context context) {
         this.context = context;
         this.firestore = FirebaseFirestore.getInstance();
@@ -52,12 +54,21 @@ public class HomeRemoteDatasource {
     }
 
     public boolean isNetworkAvailable() {
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (cm != null) {
-            NetworkInfo networkInfo = cm.getActiveNetworkInfo();
-            return networkInfo != null && networkInfo.isConnected();
+        if (connectivityManager == null) {
+            connectivityManager = (ConnectivityManager)
+                    context.getSystemService(Context.CONNECTIVITY_SERVICE);
         }
-        return false;
+
+        if (connectivityManager == null) return false;
+
+        Network network = connectivityManager.getActiveNetwork();
+        if (network == null) return false;
+
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
+        if (capabilities == null) return false;
+
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
     }
     public Completable addFavoriteToFirestore(FavoriteMealEntity entity) {
         return Completable.create(emitter -> {

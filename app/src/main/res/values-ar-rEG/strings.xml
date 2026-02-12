@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">recipe_android_project</string>
+    <string name="app_name">MenuMaster</string>
     <string name="version_1_0">الإصدار 1.0</string>
     <string name="discover_delicious_recipes">اكتشف وصفات شهية</string>
     <string name="recipe_app">تطبيق الوصفات</string>
@@ -11,7 +11,7 @@
     <string name="hello_blank_fragment">مرحباً بالصفحة الفارغة</string>
     <string name="auth_image">صورة المصادقة</string>
     <string name="ready_to_cook">مستعد للطبخ؟</string>
-    <string name="your_personal_meal_planner_awaits_join_mealmate_to_save_your_favorite_recipes">مخطط وجباتك الشخصي في انتظارك. انضم إلى MealMate لحفظ وصفاتك المفضلة.</string>
+    <string name="your_personal_meal_planner_awaits_join_mealmate_to_save_your_favorite_recipes">مخطط وجباتك الشخصي في انتظارك. انضم إلى MenuMaster لحفظ وصفاتك المفضلة.</string>
     <string name="sign_up_with_email">التسجيل بالبريد الإلكتروني</string>
     <string name="sign_in">تسجيل الدخول</string>
     <string name="continue_with_google">المتابعة مع جوجل</string>
@@ -26,7 +26,7 @@
     <string name="password">كلمة المرور</string>
     <string name="sign_in_to_continue_planning_your_meals">سجّل الدخول لمتابعة تخطيط وجباتك.</string>
     <string name="welcome_back">مرحباً بعودتك</string>
-    <string name="hello_mealmate_com">hello@mealmate.com</string>
+    <string name="hello_mealmate_com">hello@MenuMaster.com</string>
     <string name="create_account">إنشاء حساب</string>
     <string name="sign_up_to_start_planning">سجّل لبدء التخطيط</string>
     <string name="full_name">الاسم الكامل</string>
@@ -128,4 +128,33 @@
     <string name="password_too_weak">كلمة المرور ضعيفة جداً</string>
     <string name="changing_password">جارٍ تغيير كلمة المرور…</string>
     <string name="ar">ar</string>
+    <!-- AddToPlanDialog -->
+    <string name="meal_type_breakfast">فطور</string>
+    <string name="meal_type_lunch">غداء</string>
+    <string name="meal_type_dinner">عشاء</string>
+
+    <string name="month_january">يناير</string>
+    <string name="month_february">فبراير</string>
+    <string name="month_march">مارس</string>
+    <string name="month_april">أبريل</string>
+    <string name="month_may">مايو</string>
+    <string name="month_june">يونيو</string>
+    <string name="month_july">يوليو</string>
+    <string name="month_august">أغسطس</string>
+    <string name="month_september">سبتمبر</string>
+    <string name="month_october">أكتوبر</string>
+    <string name="month_november">نوفمبر</string>
+    <string name="month_december">ديسمبر</string>
+
+    <string name="error_select_meal_type">يرجى اختيار نوع الوجبة</string>
+    <string name="existing_plan_message">\"%1$s\" مخطط بالفعل لهذا الموعد</string>
+    <string name="btn_replace">استبدال</string>
+    <string name="btn_add_to_plan">أضف إلى الخطة</string>
+    <string name="date_format_display">%1$d %3$s %4$d</string>
+    <string name="month_year_format">%1$s %2$d</string>
+
+    <string name="day_suffix_st"></string>
+    <string name="day_suffix_nd"></string>
+    <string name="day_suffix_rd"></string>
+    <string name="day_suffix_th"></string>
 </resources>

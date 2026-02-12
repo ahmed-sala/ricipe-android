@@ -24,6 +24,7 @@ roomRuntime = "2.8.4"
 lottieVersion="3.5.0"
 rxandroid = "3.0.2"
 rxjava = "3.1.12"
+swiperefreshlayout = "1.2.0"
 viewpager2 = "1.1.0"
 navigationFragment = "2.9.6"
 navigationUi = "2.9.6"
@@ -32,6 +33,7 @@ adapter-rxjava3 = { module = "com.squareup.retrofit2:adapter-rxjava3", version.r
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
+androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
 bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
 core = { module = "com.pierfrancescosoffritti.androidyoutubeplayer:core", version.ref = "core" }

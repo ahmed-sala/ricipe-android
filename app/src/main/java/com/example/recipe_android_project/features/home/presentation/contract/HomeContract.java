@@ -21,14 +21,17 @@ public interface HomeContract {
         void onFavoriteError(String message);
         void updateMealFavoriteStatus(Meal meal, boolean isFavorite);
         void showLoginRequired();
+        void showNoInternet();
+        void hideNoInternet();
+        void showFeaturedLoading();
     }
 
     interface Presenter {
         void loadHome();
         void onCategorySelected(Category category);
-        void detach();
         void addToFavorites(Meal meal);
         void removeFromFavorites(Meal meal);
         boolean isUserLoggedIn();
+        void detach();
     }
 }

@@ -7,7 +7,6 @@ import com.example.recipe_android_project.features.onboarding.domain.model.Onboa
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class OnboardingRepository {
 
     private final OnboardingLocalDataSource localDataSource;
@@ -40,16 +39,11 @@ public class OnboardingRepository {
         return items;
     }
 
-
     public void setOnboardingCompleted() {
         localDataSource.setOnboardingCompleted(true);
     }
 
-
     public boolean isOnboardingCompleted() {
         return localDataSource.isOnboardingCompleted();
-    }
-    public boolean isLoggedIn() {
-        return localDataSource.isLoggedIn();
     }
 }
