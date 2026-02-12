@@ -67,6 +67,7 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
     private YouTubePlayerView youtubePlayerView;
     private MaterialCardView cardVideoPlayer, cardNoVideo;
     private MaterialButton btnAddToWeeklyPlan;
+    private MaterialCardView cardOfflineBanner, cardLimitedData;
 
     private FrameLayout loadingContainer;
     private LottieAnimationView lottieScreenLoading;
@@ -112,7 +113,8 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         lottieImageLoading = view.findViewById(R.id.lottieImageLoading);
         tvLoadingMessage = view.findViewById(R.id.tvLoadingMessage);
         contentContainer = view.findViewById(R.id.contentContainer);
-
+        cardOfflineBanner = view.findViewById(R.id.cardOfflineBanner);
+        cardLimitedData = view.findViewById(R.id.cardLimitedData);
         appBarLayout = view.findViewById(R.id.appBarLayout);
         collapsingToolbar = view.findViewById(R.id.collapsingToolbar);
         ivMealImage = view.findViewById(R.id.ivMealImage);
@@ -731,7 +733,35 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
         return matcher.find() ? matcher.group() : null;
     }
 
+    @Override
+    public void showOfflineBanner() {
+        if (cardOfflineBanner != null) {
+            cardOfflineBanner.setVisibility(View.VISIBLE);
+            cardOfflineBanner.postDelayed(() -> {
+                if (cardOfflineBanner != null) {
+                    cardOfflineBanner.animate()
+                            .alpha(0f)
+                            .setDuration(300)
+                            .withEndAction(() -> {
+                                cardOfflineBanner.setVisibility(View.GONE);
+                                cardOfflineBanner.setAlpha(1f);
+                            })
+                            .start();
+                }
+            }, 5000);
+        }
+    }
 
+    @Override
+    public void showLimitedDataMessage() {
+        if (cardLimitedData != null) {
+            cardLimitedData.setVisibility(View.VISIBLE);
+        }
+
+        if (btnReadMore != null) {
+            btnReadMore.setVisibility(View.GONE);
+        }
+    }
     @Override
     public void onDestroyView() {
         super.onDestroyView();

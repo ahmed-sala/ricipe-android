@@ -9,6 +9,7 @@ import com.example.recipe_android_project.features.meal_detail.domain.model.Inst
 import com.example.recipe_android_project.features.meal_detail.domain.model.MealPlan;
 import com.example.recipe_android_project.features.meal_detail.presentation.contract.MealDetailContract;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -60,7 +61,6 @@ public class MealDetailPresenter implements MealDetailContract.Presenter {
         }
 
         cancelMealDetailRequest();
-
         view.showScreenLoading();
 
         mealDetailDisposable = repository
@@ -77,20 +77,31 @@ public class MealDetailPresenter implements MealDetailContract.Presenter {
                                 view.showMealDetails(meal);
                                 view.updateFavoriteStatus(isFavorite);
 
-                                if (meal.hasIngredients()) {
-                                    view.showIngredients(
-                                            meal.getIngredients());
+                                if (meal.isOffline()) {
+                                    view.showOfflineBanner();
                                 }
 
-                                List<InstructionStep> instructions =
-                                        InstructionParser
-                                                .parseInstructions(
-                                                        meal.getInstructions());
-                                view.showInstructions(instructions);
+                                if (meal.isLimitedData()) {
+                                    view.showIngredients(new ArrayList<>());
+                                    view.showLimitedDataMessage();
+                                } else if (meal.hasIngredients()) {
+                                    view.showIngredients(meal.getIngredients());
+                                }
 
-                                if (meal.hasYoutubeVideo()) {
-                                    view.showYoutubeVideo(
-                                            meal.getYoutubeUrl());
+                                if (meal.isLimitedData()
+                                        || meal.getInstructions() == null
+                                        || meal.getInstructions().isEmpty()) {
+                                    view.showInstructions(new ArrayList<>());
+                                } else {
+                                    List<InstructionStep> instructions =
+                                            InstructionParser.parseInstructions(
+                                                    meal.getInstructions());
+                                    view.showInstructions(instructions);
+                                }
+
+                                if (!meal.isLimitedData()
+                                        && meal.hasYoutubeVideo()) {
+                                    view.showYoutubeVideo(meal.getYoutubeUrl());
                                 } else {
                                     view.hideYoutubeVideo();
                                 }

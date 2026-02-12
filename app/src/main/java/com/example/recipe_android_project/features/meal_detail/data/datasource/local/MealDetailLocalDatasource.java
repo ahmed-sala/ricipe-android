@@ -17,11 +17,14 @@ import io.reactivex.rxjava3.core.Single;
 public class MealDetailLocalDatasource {
     private final MealDao mealDao;
     private final MealPlanDao mealPlanDao;
+
     public MealDetailLocalDatasource(Context context) {
         DbManager dbManager = DbManager.getInstance(context);
         this.mealDao = dbManager.favoriteMealDao();
         this.mealPlanDao = dbManager.mealPlanDao();
     }
+
+
     public Completable addToFavorites(FavoriteMealEntity entity) {
         return mealDao.insertFavorite(entity);
     }
@@ -33,16 +36,32 @@ public class MealDetailLocalDatasource {
     public Single<Boolean> isFavorite(String mealId, String userId) {
         return mealDao.isFavorite(mealId, userId);
     }
+
+
+    public Single<FavoriteMealEntity> getFavoriteMealById(String mealId, String userId) {
+        return mealDao.getFavoriteMealById(mealId, userId);
+    }
+
+
     public Completable addMealPlan(MealPlanEntity mealPlan) {
         return mealPlanDao.insertMealPlan(mealPlan);
     }
+
     public Completable removeMealPlan(String userId, String date, String mealType) {
         return mealPlanDao.deleteMealPlanByKey(userId, date, mealType);
     }
+
     public Single<MealPlanEntity> getMealPlan(String userId, String date, String mealType) {
         return mealPlanDao.getMealPlan(userId, date, mealType);
     }
-    public Completable updateMealPlanSyncStatus(String userId, String date, String mealType, boolean isSynced) {
+
+
+    public Single<MealPlanEntity> getMealPlanByMealId(String mealId, String userId) {
+        return mealPlanDao.getMealPlanByMealId(mealId, userId);
+    }
+
+    public Completable updateMealPlanSyncStatus(String userId, String date,
+                                                String mealType, boolean isSynced) {
         return mealPlanDao.updateSyncStatus(userId, date, mealType, isSynced);
     }
 }

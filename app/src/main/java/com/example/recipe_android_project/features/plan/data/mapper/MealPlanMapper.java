@@ -1,5 +1,6 @@
 package com.example.recipe_android_project.features.plan.data.mapper;
 
+import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.meal_detail.domain.model.MealPlan;
 import com.example.recipe_android_project.features.plan.data.entity.MealPlanEntity;
 
@@ -13,7 +14,23 @@ public class MealPlanMapper {
     private MealPlanMapper() {
     }
 
+    public static Meal toMealDomain(MealPlanEntity entity) {
+        if (entity == null) return null;
 
+        Meal meal = new Meal();
+        meal.setId(entity.getMealId());
+        meal.setName(entity.getMealName());
+        meal.setThumbnailUrl(entity.getMealThumbnail());
+        meal.setCategory(entity.getMealCategory());
+        meal.setArea(entity.getMealArea());
+        meal.setFavorite(false);
+
+        meal.setInstructions(null);
+        meal.setYoutubeUrl(null);
+        meal.setIngredients(new ArrayList<>());
+
+        return meal;
+    }
     public static MealPlan toDomain(MealPlanEntity entity) {
         if (entity == null) return null;
 
@@ -45,27 +62,6 @@ public class MealPlanMapper {
         }
         return mealPlans;
     }
-
-
-    public static MealPlanEntity toEntity(MealPlan mealPlan) {
-        if (mealPlan == null) return null;
-
-        MealPlanEntity entity = new MealPlanEntity();
-        entity.setUserId(mealPlan.getUserId() != null ? mealPlan.getUserId() : "");
-        entity.setDate(mealPlan.getDate() != null ? mealPlan.getDate() : "");
-        entity.setMealType(mealPlan.getMealType() != null ? mealPlan.getMealType() : "");
-        entity.setMealId(mealPlan.getMealId() != null ? mealPlan.getMealId() : "");
-        entity.setMealName(mealPlan.getMealName());
-        entity.setMealThumbnail(mealPlan.getMealThumbnail());
-        entity.setMealCategory(mealPlan.getMealCategory());
-        entity.setMealArea(mealPlan.getMealArea());
-        entity.setCreatedAt(mealPlan.getCreatedAt());
-        entity.setUpdatedAt(mealPlan.getUpdatedAt());
-        entity.setSynced(mealPlan.isSynced());
-
-        return entity;
-    }
-
     public static MealPlanEntity mapToEntity(Map<String, Object> map) {
         if (map == null || map.isEmpty()) return null;
 
@@ -150,24 +146,6 @@ public class MealPlanMapper {
         entity.setUpdatedAt(System.currentTimeMillis());
         entity.setSynced(false);
         return entity;
-    }
-    public static MealPlanEntity copyEntity(MealPlanEntity source) {
-        if (source == null) return null;
-
-        MealPlanEntity copy = new MealPlanEntity();
-        copy.setUserId(source.getUserId());
-        copy.setDate(source.getDate());
-        copy.setMealType(source.getMealType());
-        copy.setMealId(source.getMealId());
-        copy.setMealName(source.getMealName());
-        copy.setMealThumbnail(source.getMealThumbnail());
-        copy.setMealCategory(source.getMealCategory());
-        copy.setMealArea(source.getMealArea());
-        copy.setCreatedAt(source.getCreatedAt());
-        copy.setUpdatedAt(source.getUpdatedAt());
-        copy.setSynced(source.isSynced());
-
-        return copy;
     }
     public static boolean isValidMealPlanEntity(MealPlanEntity entity) {
         if (entity == null) return false;

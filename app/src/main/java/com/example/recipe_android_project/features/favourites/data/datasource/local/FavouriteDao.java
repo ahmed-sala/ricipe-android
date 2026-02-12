@@ -20,4 +20,5 @@ public interface FavouriteDao {
     Flowable<List<FavoriteMealEntity>> getAllFavoritesByUserId(String userId);
     @Query("SELECT EXISTS(SELECT 1 FROM favorite_meals WHERE meal_id = :mealId AND user_id = :userId)")
     Single<Boolean> isFavorite(String mealId, String userId);
+
 }

@@ -24,13 +24,13 @@ public class Meal implements Serializable {
     private List<Ingredient> ingredients;
     private boolean isFavorite;
     private long createdAt;
-
+    private boolean isOffline = false;
+    private boolean isLimitedData = false;
     public Meal() {
         this.ingredients = new ArrayList<>();
         this.createdAt = System.currentTimeMillis();
     }
 
-    // ==================== HELPER METHODS ====================
 
     public List<String> getTagsList() {
         List<String> tagList = new ArrayList<>();
@@ -190,7 +190,21 @@ public class Meal implements Serializable {
     public void setCreatedAt(long createdAt) {
         this.createdAt = createdAt;
     }
+    public boolean isOffline() {
+        return isOffline;
+    }
 
+    public void setOffline(boolean offline) {
+        isOffline = offline;
+    }
+
+    public boolean isLimitedData() {
+        return isLimitedData;
+    }
+
+    public void setLimitedData(boolean limitedData) {
+        isLimitedData = limitedData;
+    }
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
