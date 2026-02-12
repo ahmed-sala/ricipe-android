@@ -15,6 +15,9 @@ public interface MealDetailContract {
         void showMealDetails(Meal meal);
         void showIngredients(List<Ingredient> ingredients);
         void showInstructions(List<InstructionStep> instructions);
+        void showOfflineBanner();
+        void showLimitedDataMessage();
+
         void showYoutubeVideo(String youtubeUrl);
         void hideYoutubeVideo();
         void updateFavoriteStatus(boolean isFavorite);

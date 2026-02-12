@@ -18,7 +18,55 @@ public class MealMapper {
     private MealMapper() {
     }
 
+    public static Meal fromFavoriteEntity(FavoriteMealEntity entity) {
+        if (entity == null) return null;
 
+        Meal meal = new Meal();
+        meal.setId(entity.getMealId());
+        meal.setName(entity.getName());
+        meal.setAlternateName(entity.getAlternateName());
+        meal.setCategory(entity.getCategory());
+        meal.setArea(entity.getArea());
+        meal.setInstructions(entity.getInstructions());
+        meal.setThumbnailUrl(entity.getThumbnailUrl());
+        meal.setTags(entity.getTags());
+        meal.setYoutubeUrl(entity.getYoutubeUrl());
+        meal.setSourceUrl(entity.getSourceUrl());
+        meal.setImageSource(entity.getImageSource());
+        meal.setCreativeCommonsConfirmed(entity.getCreativeCommonsConfirmed());
+        meal.setDateModified(entity.getDateModified());
+        meal.setFavorite(true); // It's from favorites, so it IS a favorite
+
+        // Parse ingredients from JSON
+        if (entity.getIngredientsJson() != null && !entity.getIngredientsJson().isEmpty()) {
+            try {
+                List<Ingredient> ingredients = parseIngredientsFromJson(entity.getIngredientsJson());
+                meal.setIngredients(ingredients);
+            } catch (Exception e) {
+                meal.setIngredients(new ArrayList<>());
+            }
+        }
+
+        return meal;
+    }
+
+    private static List<Ingredient> parseIngredientsFromJson(String json) {
+        List<Ingredient> ingredients = new ArrayList<>();
+        try {
+            org.json.JSONArray jsonArray = new org.json.JSONArray(json);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                org.json.JSONObject obj = jsonArray.getJSONObject(i);
+                String name = obj.optString("name", "");
+                String measure = obj.optString("measure", "");
+                if (!name.isEmpty()) {
+                    ingredients.add(new Ingredient(name, measure));
+                }
+            }
+        } catch (org.json.JSONException e) {
+            e.printStackTrace();
+        }
+        return ingredients;
+    }
     public static Meal toDomain(MealDto dto) {
         if (dto == null) return null;
 

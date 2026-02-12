@@ -37,5 +37,7 @@ public interface MealDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM favorite_meals WHERE meal_id = :mealId AND user_id = :userId)")
     Single<Boolean> isFavorite(String mealId, String userId);
+    @Query("SELECT * FROM favorite_meals WHERE meal_id = :mealId AND user_id = :userId LIMIT 1")
+    Single<FavoriteMealEntity> getFavoriteMealById(String mealId, String userId);
 
 }
