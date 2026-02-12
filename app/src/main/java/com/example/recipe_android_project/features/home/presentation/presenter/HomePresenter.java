@@ -2,7 +2,7 @@ package com.example.recipe_android_project.features.home.presentation.presenter;
 
 import android.content.Context;
 
-import com.example.recipe_android_project.core.helper.BasePresenter;
+import com.example.recipe_android_project.core.helper.NetworkMonitor;
 import com.example.recipe_android_project.features.home.data.repository.HomeRepository;
 import com.example.recipe_android_project.features.home.model.Category;
 import com.example.recipe_android_project.features.home.model.Meal;
@@ -15,11 +15,18 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
+import io.reactivex.rxjava3.subjects.PublishSubject;
 
-public class HomePresenter extends BasePresenter<HomeContract.View> implements HomeContract.Presenter {
+public class HomePresenter implements HomeContract.Presenter {
+
+    private HomeContract.View view;
 
     private final HomeRepository repository;
+    private final NetworkMonitor networkMonitor;
     private final CompositeDisposable disposables = new CompositeDisposable();
+
+    private final PublishSubject<Boolean> networkSubject = PublishSubject.create();
+    private Disposable networkDisposable;
 
     private Disposable categoryDisposable;
     private Disposable mealsDisposable;
@@ -30,9 +37,92 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
     private final AtomicInteger completedRequests = new AtomicInteger(0);
     private static final int TOTAL_INITIAL_REQUESTS = 2;
 
+    private boolean dataWasLoaded = false;
+    private boolean needsReloadOnReconnect = false;
+
     public HomePresenter(Context context) {
         this.repository = new HomeRepository(context);
+        this.networkMonitor = new NetworkMonitor(context);
     }
+
+
+    public void attachView(HomeContract.View view) {
+        this.view = view;
+    }
+
+    public void detachView() {
+        this.view = null;
+    }
+
+    private boolean isViewAttached() {
+        return view != null;
+    }
+
+
+    public void startNetworkMonitoring() {
+
+        networkDisposable = networkSubject
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(isAvailable -> {
+                    if (!isViewAttached()) return;
+
+                    if (isAvailable) {
+                        handleNetworkAvailable();
+                    } else {
+                        handleNetworkLost();
+                    }
+                });
+        disposables.add(networkDisposable);
+
+        networkMonitor.setListener(new NetworkMonitor.NetworkCallback() {
+            @Override
+            public void onNetworkAvailable() {
+                networkSubject.onNext(true);
+            }
+
+            @Override
+            public void onNetworkLost() {
+                networkSubject.onNext(false);
+            }
+        });
+        networkMonitor.startMonitoring();
+    }
+
+    private void handleNetworkAvailable() {
+        view.hideNoInternet();
+
+        if (needsReloadOnReconnect) {
+            needsReloadOnReconnect = false;
+
+            if (!dataWasLoaded) {
+                view.showScreenLoading();
+                view.showFeaturedLoading();
+                loadHome();
+            } else {
+                view.showFeaturedLoading();
+                loadHome();
+            }
+        }
+    }
+
+    private void handleNetworkLost() {
+        cancelAllRequests();
+        view.showNoInternet();
+        needsReloadOnReconnect = true;
+    }
+
+    public void stopNetworkMonitoring() {
+        networkMonitor.stopMonitoring();
+        if (networkDisposable != null
+                && !networkDisposable.isDisposed()) {
+            networkDisposable.dispose();
+        }
+    }
+
+    public boolean isNetworkCurrentlyAvailable() {
+        return networkMonitor.isNetworkAvailable();
+    }
+
 
     private String randomLetter() {
         char c = (char) ('a' + new Random().nextInt(26));
@@ -46,8 +136,6 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
         cancelAllRequests();
         completedRequests.set(0);
 
-        getView().showScreenLoading();
-
         loadMealOfTheDay();
         loadCategories();
         loadMealsByRandomLetter();
@@ -60,13 +148,15 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
                 .subscribe(
                         meal -> {
                             if (isViewAttached()) {
-                                getView().showMealOfTheDay(meal);
+                                view.showMealOfTheDay(meal);
                             }
                         },
                         throwable -> {
                             if (isViewAttached()) {
-                                getView().hideMealOfDayLoading();
-                                getView().showError(getErrorMessage(throwable, "Meal of day error"));
+                                view.hideMealOfDayLoading();
+                                view.showError(
+                                        getErrorMessage(throwable,
+                                                "Meal of day error"));
                             }
                         }
                 );
@@ -80,13 +170,15 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
                 .subscribe(
                         categories -> {
                             if (isViewAttached()) {
-                                getView().showCategories(categories);
+                                view.showCategories(categories);
                             }
                             checkAndFinishLoading();
                         },
                         throwable -> {
                             if (isViewAttached()) {
-                                getView().showError(getErrorMessage(throwable, "Categories error"));
+                                view.showError(
+                                        getErrorMessage(throwable,
+                                                "Categories error"));
                             }
                             checkAndFinishLoading();
                         }
@@ -95,19 +187,22 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
     }
 
     private void loadMealsByRandomLetter() {
-        mealsDisposable = repository.getMealsByFirstLetterWithFavoriteStatus(randomLetter())
+        mealsDisposable = repository
+                .getMealsByFirstLetterWithFavoriteStatus(randomLetter())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         meals -> {
                             if (isViewAttached()) {
-                                getView().showMeals(meals);
+                                view.showMeals(meals);
                             }
                             checkAndFinishLoading();
                         },
                         throwable -> {
                             if (isViewAttached()) {
-                                getView().showError(getErrorMessage(throwable, "Meals error"));
+                                view.showError(
+                                        getErrorMessage(throwable,
+                                                "Meals error"));
                             }
                             checkAndFinishLoading();
                         }
@@ -118,10 +213,12 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
     private void checkAndFinishLoading() {
         int completed = completedRequests.incrementAndGet();
         if (completed >= TOTAL_INITIAL_REQUESTS && isViewAttached()) {
-            getView().hideScreenLoading();
-            getView().onHomeLoaded();
+            dataWasLoaded = true;
+            view.hideScreenLoading();
+            view.onHomeLoaded();
         }
     }
+
 
     @Override
     public void onCategorySelected(Category category) {
@@ -129,30 +226,35 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
 
         cancelCategoryFilter();
 
-        categoryFilterDisposable = repository.getMealsByCategoryWithFavoriteStatus(category.getName())
+        categoryFilterDisposable = repository
+                .getMealsByCategoryWithFavoriteStatus(category.getName())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         meals -> {
                             if (isViewAttached()) {
-                                getView().showMeals(meals);
+                                view.showMeals(meals);
                             }
                         },
                         throwable -> {
                             if (isViewAttached()) {
-                                getView().showError(getErrorMessage(throwable, "Category filter error"));
+                                view.showError(
+                                        getErrorMessage(throwable,
+                                                "Category filter error"));
                             }
                         }
                 );
         disposables.add(categoryFilterDisposable);
     }
 
+
+
     @Override
     public void addToFavorites(Meal meal) {
         if (!isViewAttached() || meal == null) return;
 
         if (!isUserLoggedIn()) {
-            getView().showLoginRequired();
+            view.showLoginRequired();
             return;
         }
 
@@ -165,13 +267,15 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
                         () -> {
                             if (isViewAttached()) {
                                 meal.setFavorite(true);
-                                getView().onFavoriteAdded(meal);
-                                getView().updateMealFavoriteStatus(meal, true);
+                                view.onFavoriteAdded(meal);
+                                view.updateMealFavoriteStatus(meal, true);
                             }
                         },
                         throwable -> {
                             if (isViewAttached()) {
-                                getView().onFavoriteError(getErrorMessage(throwable, "Failed to add favorite"));
+                                view.onFavoriteError(
+                                        getErrorMessage(throwable,
+                                                "Failed to add favorite"));
                             }
                         }
                 );
@@ -183,7 +287,7 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
         if (!isViewAttached() || meal == null) return;
 
         if (!isUserLoggedIn()) {
-            getView().showLoginRequired();
+            view.showLoginRequired();
             return;
         }
 
@@ -196,13 +300,15 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
                         () -> {
                             if (isViewAttached()) {
                                 meal.setFavorite(false);
-                                getView().onFavoriteRemoved(meal);
-                                getView().updateMealFavoriteStatus(meal, false);
+                                view.onFavoriteRemoved(meal);
+                                view.updateMealFavoriteStatus(meal, false);
                             }
                         },
                         throwable -> {
                             if (isViewAttached()) {
-                                getView().onFavoriteError(getErrorMessage(throwable, "Failed to remove favorite"));
+                                view.onFavoriteError(
+                                        getErrorMessage(throwable,
+                                                "Failed to remove favorite"));
                             }
                         }
                 );
@@ -214,15 +320,13 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
         return repository.isUserAuthenticated();
     }
 
-    private String getErrorMessage(Throwable throwable, String defaultMessage) {
-        if (throwable == null) {
-            return defaultMessage;
-        }
+
+    private String getErrorMessage(Throwable throwable,
+                                   String defaultMessage) {
+        if (throwable == null) return defaultMessage;
 
         String message = throwable.getMessage();
-        if (message == null || message.isEmpty()) {
-            return defaultMessage;
-        }
+        if (message == null || message.isEmpty()) return defaultMessage;
 
         if (throwable instanceof java.net.UnknownHostException) {
             return "No internet connection";
@@ -235,34 +339,44 @@ public class HomePresenter extends BasePresenter<HomeContract.View> implements H
         return message;
     }
 
+
+
     private void cancelFavoriteRequest() {
-        if (favoriteDisposable != null && !favoriteDisposable.isDisposed()) {
+        if (favoriteDisposable != null
+                && !favoriteDisposable.isDisposed()) {
             favoriteDisposable.dispose();
         }
     }
 
     private void cancelCategoryFilter() {
-        if (categoryFilterDisposable != null && !categoryFilterDisposable.isDisposed()) {
+        if (categoryFilterDisposable != null
+                && !categoryFilterDisposable.isDisposed()) {
             categoryFilterDisposable.dispose();
         }
     }
 
     private void cancelAllRequests() {
-        if (mealOfDayDisposable != null && !mealOfDayDisposable.isDisposed()) {
+        if (mealOfDayDisposable != null
+                && !mealOfDayDisposable.isDisposed()) {
             mealOfDayDisposable.dispose();
         }
-        if (categoryDisposable != null && !categoryDisposable.isDisposed()) {
+        if (categoryDisposable != null
+                && !categoryDisposable.isDisposed()) {
             categoryDisposable.dispose();
         }
-        if (mealsDisposable != null && !mealsDisposable.isDisposed()) {
+        if (mealsDisposable != null
+                && !mealsDisposable.isDisposed()) {
             mealsDisposable.dispose();
         }
         cancelCategoryFilter();
         cancelFavoriteRequest();
     }
 
+
+
     @Override
     public void detach() {
+        stopNetworkMonitoring();
         dispose();
         detachView();
     }

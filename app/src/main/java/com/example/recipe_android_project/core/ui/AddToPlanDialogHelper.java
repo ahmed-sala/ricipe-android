@@ -35,9 +35,11 @@ public class AddToPlanDialogHelper {
         void onDateOrMealTypeChanged(String date, String mealType);
     }
 
-    private static final String[] MEAL_TYPES = {"Breakfast", "Lunch", "Dinner"};
-    private static final String[] months = {"January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"};
+    private static final String[] MEAL_TYPE_KEYS = {"breakfast", "lunch", "dinner"};
+
+    private Context context;
+    private String[] mealTypeLabels;
+    private String[] monthNames;
 
     private Dialog dialog;
     private DialogWeekPagerAdapter weekPagerAdapter;
@@ -59,12 +61,38 @@ public class AddToPlanDialogHelper {
 
     private boolean isUpdatingFromPageChange = false;
 
+    private void initStringResources(Context context) {
+        this.context = context;
+
+        mealTypeLabels = new String[]{
+                context.getString(R.string.meal_type_breakfast),
+                context.getString(R.string.meal_type_lunch),
+                context.getString(R.string.meal_type_dinner)
+        };
+
+        monthNames = new String[]{
+                context.getString(R.string.month_january),
+                context.getString(R.string.month_february),
+                context.getString(R.string.month_march),
+                context.getString(R.string.month_april),
+                context.getString(R.string.month_may),
+                context.getString(R.string.month_june),
+                context.getString(R.string.month_july),
+                context.getString(R.string.month_august),
+                context.getString(R.string.month_september),
+                context.getString(R.string.month_october),
+                context.getString(R.string.month_november),
+                context.getString(R.string.month_december)
+        };
+    }
+
     public Dialog showAddToPlanDialog(
             @NonNull Context context,
             @NonNull Meal meal,
             @NonNull OnPlanActionListener listener
     ) {
         this.listener = listener;
+        initStringResources(context);
 
         dialog = new Dialog(context);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -124,7 +152,9 @@ public class AddToPlanDialogHelper {
         TextView tvMealPreviewCategory = view.findViewById(R.id.tvMealPreviewCategory);
 
         tvMealPreviewName.setText(meal.getName() != null ? meal.getName() : "");
-        tvMealPreviewCategory.setText(meal.getCategory() != null ? meal.getCategory() : "");
+        tvMealPreviewCategory.setText(
+                meal.getCategory() != null ? meal.getCategory() : ""
+        );
 
         if (meal.getThumbnailUrl() != null && !meal.getThumbnailUrl().isEmpty()) {
             Glide.with(context)
@@ -195,7 +225,9 @@ public class AddToPlanDialogHelper {
         updateSelectedDateDisplay();
         updatePrevMonthButtonState();
 
-        int position = weekPagerAdapter.getPositionForDate(selectedDay, selectedMonth, selectedYear);
+        int position = weekPagerAdapter.getPositionForDate(
+                selectedDay, selectedMonth, selectedYear
+        );
         viewPagerWeeks.setCurrentItem(position, true);
         weekPagerAdapter.setSelectedDate(selectedDay, selectedMonth, selectedYear);
 
@@ -203,91 +235,100 @@ public class AddToPlanDialogHelper {
     }
 
     private void setupWeekPager(View view, Context context) {
-        weekPagerAdapter = new DialogWeekPagerAdapter(new DialogWeekPagerAdapter.OnDaySelectedListener() {
-            @Override
-            public void onDaySelected(DayModel day) {
-                if (day.isPast()) {
-                    return;
-                }
+        weekPagerAdapter = new DialogWeekPagerAdapter(
+                new DialogWeekPagerAdapter.OnDaySelectedListener() {
+                    @Override
+                    public void onDaySelected(DayModel day) {
+                        if (day.isPast()) {
+                            return;
+                        }
 
-                selectedDay = day.getDayNumber();
-                selectedMonth = day.getMonth();
-                selectedYear = day.getYear();
+                        selectedDay = day.getDayNumber();
+                        selectedMonth = day.getMonth();
+                        selectedYear = day.getYear();
 
-                updateSelectedDateString();
-                updateSelectedDateDisplay();
-                updateMonthDisplay();
-                updatePrevMonthButtonState();
+                        updateSelectedDateString();
+                        updateSelectedDateDisplay();
+                        updateMonthDisplay();
+                        updatePrevMonthButtonState();
 
-                notifyDateOrMealTypeChanged();
-            }
-
-            @Override
-            public void onWeekChanged(int month, int year, int dominantMonth, int dominantYear) {
-                if (!isUpdatingFromPageChange) {
-                    if (dominantYear < todayYear ||
-                            (dominantYear == todayYear && dominantMonth < todayMonth)) {
-                        dominantMonth = todayMonth;
-                        dominantYear = todayYear;
+                        notifyDateOrMealTypeChanged();
                     }
-                    selectedMonth = dominantMonth;
-                    selectedYear = dominantYear;
-                    updateMonthDisplay();
-                    updatePrevMonthButtonState();
-                }
-            }
-        });
+
+                    @Override
+                    public void onWeekChanged(
+                            int month, int year,
+                            int dominantMonth, int dominantYear
+                    ) {
+                        if (!isUpdatingFromPageChange) {
+                            if (dominantYear < todayYear ||
+                                    (dominantYear == todayYear
+                                            && dominantMonth < todayMonth)) {
+                                dominantMonth = todayMonth;
+                                dominantYear = todayYear;
+                            }
+                            selectedMonth = dominantMonth;
+                            selectedYear = dominantYear;
+                            updateMonthDisplay();
+                            updatePrevMonthButtonState();
+                        }
+                    }
+                });
 
         viewPagerWeeks.setAdapter(weekPagerAdapter);
-
-        viewPagerWeeks.setCurrentItem(DialogWeekPagerAdapter.CENTER_POSITION, false);
+        viewPagerWeeks.setCurrentItem(
+                DialogWeekPagerAdapter.CENTER_POSITION, false
+        );
         viewPagerWeeks.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
-        viewPagerWeeks.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageSelected(int position) {
-                super.onPageSelected(position);
+        viewPagerWeeks.registerOnPageChangeCallback(
+                new ViewPager2.OnPageChangeCallback() {
+                    @Override
+                    public void onPageSelected(int position) {
+                        super.onPageSelected(position);
 
-                int minPosition = weekPagerAdapter.getMinPosition();
-                if (position < minPosition) {
-                    viewPagerWeeks.setCurrentItem(minPosition, true);
-                    return;
-                }
+                        int minPosition = weekPagerAdapter.getMinPosition();
+                        if (position < minPosition) {
+                            viewPagerWeeks.setCurrentItem(minPosition, true);
+                            return;
+                        }
 
-                isUpdatingFromPageChange = true;
+                        isUpdatingFromPageChange = true;
 
-                int[] dominant = weekPagerAdapter.getDominantMonthYear(position);
-                int dominantMonth = dominant[0];
-                int dominantYear = dominant[1];
+                        int[] dominant =
+                                weekPagerAdapter.getDominantMonthYear(position);
+                        int dominantMonth = dominant[0];
+                        int dominantYear = dominant[1];
 
-                if (dominantYear < todayYear ||
-                        (dominantYear == todayYear && dominantMonth < todayMonth)) {
-                    dominantMonth = todayMonth;
-                    dominantYear = todayYear;
-                }
+                        if (dominantYear < todayYear ||
+                                (dominantYear == todayYear
+                                        && dominantMonth < todayMonth)) {
+                            dominantMonth = todayMonth;
+                            dominantYear = todayYear;
+                        }
 
-                selectedMonth = dominantMonth;
-                selectedYear = dominantYear;
-                updateMonthDisplay();
-                updatePrevMonthButtonState();
+                        selectedMonth = dominantMonth;
+                        selectedYear = dominantYear;
+                        updateMonthDisplay();
+                        updatePrevMonthButtonState();
 
-                weekPagerAdapter.notifyWeekChanged(position);
+                        weekPagerAdapter.notifyWeekChanged(position);
 
-                isUpdatingFromPageChange = false;
-            }
-        });
+                        isUpdatingFromPageChange = false;
+                    }
+                });
     }
 
     private void setupMealTypeDropdown(View view, Context context) {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 context,
                 android.R.layout.simple_dropdown_item_1line,
-                MEAL_TYPES
+                mealTypeLabels
         );
         actvMealType.setAdapter(adapter);
 
         actvMealType.setOnItemClickListener((parent, v, position, id) -> {
-            selectedMealType = MEAL_TYPES[position].toLowerCase();
+            selectedMealType = MEAL_TYPE_KEYS[position];
             notifyDateOrMealTypeChanged();
         });
     }
@@ -312,7 +353,9 @@ public class AddToPlanDialogHelper {
 
         btnConfirmPlan.setOnClickListener(v -> {
             if (selectedMealType.isEmpty()) {
-                actvMealType.setError("Please select meal type");
+                actvMealType.setError(
+                        context.getString(R.string.error_select_meal_type)
+                );
                 return;
             }
 
@@ -325,6 +368,7 @@ public class AddToPlanDialogHelper {
             }
         });
     }
+
     private boolean isDateInPast(int day, int month, int year) {
         if (year < todayYear) return true;
         if (year > todayYear) return false;
@@ -335,52 +379,78 @@ public class AddToPlanDialogHelper {
 
     private void updateMonthDisplay() {
         if (tvCurrentMonth != null) {
-            String monthYear = months[selectedMonth] + " " + selectedYear;
+            String monthYear = context.getString(
+                    R.string.month_year_format,
+                    monthNames[selectedMonth],
+                    selectedYear
+            );
             tvCurrentMonth.setText(monthYear);
         }
     }
 
     private void updateSelectedDateDisplay() {
         if (tvSelectedDate != null) {
-            String monthName = months[selectedMonth];
+            String monthName = monthNames[selectedMonth];
             String suffix = getDaySuffix(selectedDay);
-            tvSelectedDate.setText(selectedDay + suffix + " " + monthName + " " + selectedYear);
+            String display = context.getString(
+                    R.string.date_format_display,
+                    selectedDay,
+                    suffix,
+                    monthName,
+                    selectedYear
+            );
+            tvSelectedDate.setText(display);
         }
     }
 
     private void updateSelectedDateString() {
-        selectedDateString = String.format(Locale.US, "%04d-%02d-%02d",
-                selectedYear, selectedMonth + 1, selectedDay);
+        selectedDateString = String.format(
+                Locale.US, "%04d-%02d-%02d",
+                selectedYear, selectedMonth + 1, selectedDay
+        );
     }
 
     private String getDaySuffix(int day) {
         if (day >= 11 && day <= 13) {
-            return "th";
+            return context.getString(R.string.day_suffix_th);
         }
         switch (day % 10) {
-            case 1: return "st";
-            case 2: return "nd";
-            case 3: return "rd";
-            default: return "th";
+            case 1:
+                return context.getString(R.string.day_suffix_st);
+            case 2:
+                return context.getString(R.string.day_suffix_nd);
+            case 3:
+                return context.getString(R.string.day_suffix_rd);
+            default:
+                return context.getString(R.string.day_suffix_th);
         }
     }
 
     private void notifyDateOrMealTypeChanged() {
-        if (listener != null && !selectedDateString.isEmpty() && !selectedMealType.isEmpty()) {
+        if (listener != null
+                && !selectedDateString.isEmpty()
+                && !selectedMealType.isEmpty()) {
             listener.onDateOrMealTypeChanged(selectedDateString, selectedMealType);
         }
     }
 
-    public void updateExistingPlanWarning(boolean exists, String existingMealName) {
+    public void updateExistingPlanWarning(
+            boolean exists, String existingMealName
+    ) {
         if (layoutExistingPlan == null) return;
 
         if (exists && existingMealName != null) {
             layoutExistingPlan.setVisibility(View.VISIBLE);
-            tvExistingPlanMessage.setText("\"" + existingMealName + "\" is already planned for this slot");
-            btnConfirmPlan.setText("Replace");
+            tvExistingPlanMessage.setText(
+                    context.getString(
+                            R.string.existing_plan_message,
+                            existingMealName
+                    )
+            );
+            btnConfirmPlan.setText(context.getString(R.string.btn_replace));
         } else {
             layoutExistingPlan.setVisibility(View.GONE);
-            btnConfirmPlan.setText("Add to Plan");
+            btnConfirmPlan.setText(context.getString(R.string.btn_add_to_plan));
         }
     }
 

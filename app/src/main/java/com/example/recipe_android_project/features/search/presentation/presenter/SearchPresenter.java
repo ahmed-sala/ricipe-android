@@ -1,5 +1,8 @@
 package com.example.recipe_android_project.features.search.presentation.presenter;
 
+import android.content.Context;
+
+import com.example.recipe_android_project.core.helper.NetworkMonitor;
 import com.example.recipe_android_project.features.home.model.Area;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.search.data.repository.SearchRepository;
@@ -27,9 +30,13 @@ public class SearchPresenter implements SearchContract.Presenter {
 
     private SearchContract.View view;
     private final SearchRepository repository;
+    private final NetworkMonitor networkMonitor;
     private final CompositeDisposable disposables = new CompositeDisposable();
 
     private final PublishSubject<String> searchSubject = PublishSubject.create();
+
+    private final PublishSubject<Boolean> networkSubject = PublishSubject.create();
+    private Disposable networkDisposable;
 
     private String currentQuery = "";
     private int currentTab = TAB_MEALS;
@@ -37,10 +44,87 @@ public class SearchPresenter implements SearchContract.Presenter {
     private Disposable currentSearchDisposable;
     private Disposable favoriteDisposable;
 
-    public SearchPresenter(SearchRepository repository) {
+    private boolean needsReloadOnReconnect = false;
+
+    public SearchPresenter(SearchRepository repository, Context context) {
         this.repository = repository;
+        this.networkMonitor = new NetworkMonitor(context);
         setupSearchDebounce();
     }
+
+
+    public void startNetworkMonitoring() {
+        networkDisposable = networkSubject
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(isAvailable -> {
+                    if (!isViewAttached()) return;
+
+                    if (isAvailable) {
+                        handleNetworkAvailable();
+                    } else {
+                        handleNetworkLost();
+                    }
+                });
+        disposables.add(networkDisposable);
+
+        networkMonitor.setListener(new NetworkMonitor.NetworkCallback() {
+            @Override
+            public void onNetworkAvailable() {
+                networkSubject.onNext(true);
+            }
+
+            @Override
+            public void onNetworkLost() {
+                networkSubject.onNext(false);
+            }
+        });
+        networkMonitor.startMonitoring();
+    }
+
+    private void handleNetworkAvailable() {
+        view.hideNoInternet();
+
+        if (needsReloadOnReconnect) {
+            needsReloadOnReconnect = false;
+            reloadCurrentState();
+        }
+    }
+
+    private void handleNetworkLost() {
+        cancelCurrentSearch();
+        view.hideLoading();
+        view.showNoInternet();
+        needsReloadOnReconnect = true;
+    }
+
+    public void stopNetworkMonitoring() {
+        networkMonitor.stopMonitoring();
+        if (networkDisposable != null
+                && !networkDisposable.isDisposed()) {
+            networkDisposable.dispose();
+        }
+    }
+
+    public boolean isNetworkCurrentlyAvailable() {
+        return networkMonitor.isNetworkAvailable();
+    }
+
+
+
+    private void reloadCurrentState() {
+        if (!isViewAttached()) return;
+
+        loadInitialData();
+
+        if (!currentQuery.isEmpty()) {
+            view.showLoading();
+            performSearch(currentQuery);
+        } else {
+            resetToInitialState();
+        }
+    }
+
+
 
     private void setupSearchDebounce() {
         Disposable searchDisposable = searchSubject
@@ -49,10 +133,13 @@ public class SearchPresenter implements SearchContract.Presenter {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         this::performSearch,
-                        throwable -> handleError("Search error: " + throwable.getMessage())
+                        throwable -> handleError(
+                                "Search error: " + throwable.getMessage())
                 );
         disposables.add(searchDisposable);
     }
+
+
 
     @Override
     public void attachView(SearchContract.View view) {
@@ -68,11 +155,19 @@ public class SearchPresenter implements SearchContract.Presenter {
         return view != null;
     }
 
+
+
     @Override
     public void onSearchQueryChanged(String query) {
         currentQuery = query != null ? query.trim() : "";
 
         if (view == null) return;
+
+        if (!currentQuery.isEmpty() && !isNetworkCurrentlyAvailable()) {
+            view.showNoInternet();
+            needsReloadOnReconnect = true;
+            return;
+        }
 
         if (currentQuery.isEmpty()) {
             cancelCurrentSearch();
@@ -133,6 +228,13 @@ public class SearchPresenter implements SearchContract.Presenter {
             return;
         }
 
+        if (!isNetworkCurrentlyAvailable()) {
+            view.hideLoading();
+            view.showNoInternet();
+            needsReloadOnReconnect = true;
+            return;
+        }
+
         cancelCurrentSearch();
 
         switch (currentTab) {
@@ -149,7 +251,8 @@ public class SearchPresenter implements SearchContract.Presenter {
     }
 
     private void searchMeals(String query) {
-        currentSearchDisposable = repository.getSearchedMealsWithFavoriteStatus(query)
+        currentSearchDisposable = repository
+                .getSearchedMealsWithFavoriteStatus(query)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -164,7 +267,8 @@ public class SearchPresenter implements SearchContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        ingredients -> handleIngredientsResult(query, ingredients),
+                        ingredients ->
+                                handleIngredientsResult(query, ingredients),
                         throwable -> handleSearchError(query, throwable)
                 );
         disposables.add(currentSearchDisposable);
@@ -181,6 +285,7 @@ public class SearchPresenter implements SearchContract.Presenter {
         disposables.add(currentSearchDisposable);
     }
 
+
     private void handleMealsResult(String query, List<Meal> meals) {
         if (!isValidResult(query)) return;
 
@@ -194,7 +299,8 @@ public class SearchPresenter implements SearchContract.Presenter {
         }
     }
 
-    private void handleIngredientsResult(String query, List<Ingredient> ingredients) {
+    private void handleIngredientsResult(String query,
+                                         List<Ingredient> ingredients) {
         if (!isValidResult(query)) return;
 
         view.hideLoading();
@@ -224,6 +330,8 @@ public class SearchPresenter implements SearchContract.Presenter {
         return view != null && query.equals(currentQuery);
     }
 
+
+
     @Override
     public void loadInitialData() {
         preloadIngredients();
@@ -236,7 +344,9 @@ public class SearchPresenter implements SearchContract.Presenter {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         ingredients -> {
-                            if (view != null && currentTab == TAB_INGREDIENTS && currentQuery.isEmpty()) {
+                            if (view != null
+                                    && currentTab == TAB_INGREDIENTS
+                                    && currentQuery.isEmpty()) {
                                 view.hideLoading();
                                 view.showIngredients(ingredients);
                             }
@@ -252,7 +362,9 @@ public class SearchPresenter implements SearchContract.Presenter {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         areas -> {
-                            if (view != null && currentTab == TAB_COUNTRY && currentQuery.isEmpty()) {
+                            if (view != null
+                                    && currentTab == TAB_COUNTRY
+                                    && currentQuery.isEmpty()) {
                                 view.hideLoading();
                                 view.showAreas(areas);
                             }
@@ -274,8 +386,10 @@ public class SearchPresenter implements SearchContract.Presenter {
                         ingredients -> {
                             if (view != null) {
                                 view.hideLoading();
-                                if (currentTab == TAB_INGREDIENTS && currentQuery.isEmpty()) {
-                                    if (ingredients == null || ingredients.isEmpty()) {
+                                if (currentTab == TAB_INGREDIENTS
+                                        && currentQuery.isEmpty()) {
+                                    if (ingredients == null
+                                            || ingredients.isEmpty()) {
                                         view.showEmptyIngredients();
                                     } else {
                                         view.hideEmptyState();
@@ -284,7 +398,8 @@ public class SearchPresenter implements SearchContract.Presenter {
                                 }
                             }
                         },
-                        throwable -> handleError("Failed to load ingredients")
+                        throwable ->
+                                handleError("Failed to load ingredients")
                 );
         disposables.add(disposable);
     }
@@ -301,8 +416,10 @@ public class SearchPresenter implements SearchContract.Presenter {
                         areas -> {
                             if (view != null) {
                                 view.hideLoading();
-                                if (currentTab == TAB_COUNTRY && currentQuery.isEmpty()) {
-                                    if (areas == null || areas.isEmpty()) {
+                                if (currentTab == TAB_COUNTRY
+                                        && currentQuery.isEmpty()) {
+                                    if (areas == null
+                                            || areas.isEmpty()) {
                                         view.showEmptyAreas();
                                     } else {
                                         view.hideEmptyState();
@@ -311,10 +428,12 @@ public class SearchPresenter implements SearchContract.Presenter {
                                 }
                             }
                         },
-                        throwable -> handleError("Failed to load countries")
+                        throwable ->
+                                handleError("Failed to load countries")
                 );
         disposables.add(disposable);
     }
+
 
 
     @Override
@@ -323,6 +442,7 @@ public class SearchPresenter implements SearchContract.Presenter {
             view.navigateToMealDetail(meal.getId());
         }
     }
+
     @Override
     public void onIngredientClicked(Ingredient ingredient) {
         if (view != null && ingredient != null) {
@@ -334,6 +454,7 @@ public class SearchPresenter implements SearchContract.Presenter {
             view.navigateToFilterResult(params);
         }
     }
+
     @Override
     public void onAreaClicked(Area area) {
         if (view != null && area != null) {
@@ -345,6 +466,9 @@ public class SearchPresenter implements SearchContract.Presenter {
             view.navigateToFilterResult(params);
         }
     }
+
+
+
     @Override
     public void addToFavorites(Meal meal) {
         if (!isViewAttached() || meal == null) return;
@@ -369,12 +493,14 @@ public class SearchPresenter implements SearchContract.Presenter {
                         },
                         throwable -> {
                             if (isViewAttached()) {
-                                view.onFavoriteError(getErrorMessage(throwable));
+                                view.onFavoriteError(
+                                        getErrorMessage(throwable));
                             }
                         }
                 );
         disposables.add(favoriteDisposable);
     }
+
     @Override
     public void removeFromFavorites(Meal meal) {
         if (!isViewAttached() || meal == null) return;
@@ -399,33 +525,42 @@ public class SearchPresenter implements SearchContract.Presenter {
                         },
                         throwable -> {
                             if (isViewAttached()) {
-                                view.onFavoriteError(getErrorMessage(throwable));
+                                view.onFavoriteError(
+                                        getErrorMessage(throwable));
                             }
                         }
                 );
         disposables.add(favoriteDisposable);
     }
+
     @Override
     public boolean isUserLoggedIn() {
         return repository.isUserAuthenticated();
     }
+
     private void cancelFavoriteRequest() {
-        if (favoriteDisposable != null && !favoriteDisposable.isDisposed()) {
+        if (favoriteDisposable != null
+                && !favoriteDisposable.isDisposed()) {
             favoriteDisposable.dispose();
         }
     }
+
+
+
     private void handleSearchError(String query, Throwable throwable) {
         if (!isValidResult(query)) return;
 
         view.hideLoading();
         view.showError(getErrorMessage(throwable));
     }
+
     private void handleError(String message) {
         if (view != null) {
             view.hideLoading();
             view.showError(message);
         }
     }
+
     private String getErrorMessage(Throwable throwable) {
         if (throwable == null) {
             return "An unknown error occurred";
@@ -446,13 +581,21 @@ public class SearchPresenter implements SearchContract.Presenter {
 
         return message;
     }
+
+
+
     private void cancelCurrentSearch() {
-        if (currentSearchDisposable != null && !currentSearchDisposable.isDisposed()) {
+        if (currentSearchDisposable != null
+                && !currentSearchDisposable.isDisposed()) {
             currentSearchDisposable.dispose();
         }
     }
+
+
+
     @Override
     public void dispose() {
+        stopNetworkMonitoring();
         cancelCurrentSearch();
         cancelFavoriteRequest();
         disposables.clear();

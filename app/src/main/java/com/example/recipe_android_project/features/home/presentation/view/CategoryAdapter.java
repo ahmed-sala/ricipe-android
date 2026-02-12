@@ -28,17 +28,22 @@ import java.util.List;
 public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.VH> {
 
     private final List<Category> items;
-    private int selectedIndex = 0;
+    private int selectedIndex = -1;
     private OnCategoryClickListener listener;
 
-    private static final int COLOR_PRIMARY = 0xFFFF7A1A;   // Orange
     private static final int COLOR_WHITE = 0xFFFFFFFF;
     private static final int COLOR_TEXT_DARK = 0xFF1A1A1A;
 
     public interface OnCategoryClickListener {
         void onCategoryClick(Category item, int position);
     }
-
+    public void resetSelection() {
+        int oldIndex = selectedIndex;
+        selectedIndex = -1;
+        if (oldIndex != -1) {
+            notifyItemChanged(oldIndex);
+        }
+    }
     public CategoryAdapter(List<Category> items, OnCategoryClickListener listener) {
         this.items = items;
         this.listener = listener;
@@ -47,7 +52,6 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.VH> {
     public void setItems(List<Category> newItems) {
         items.clear();
         items.addAll(newItems);
-        selectedIndex = -1;
         notifyDataSetChanged();
     }
 
@@ -85,7 +89,6 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.VH> {
         Glide.with(holder.img)
                 .load(item.getThumbnailUrl())
                 .centerCrop()
-                .placeholder(R.drawable.category_icon)
                 .error(R.drawable.ic_error)
                 .listener(new RequestListener<Drawable>() {
                     @Override

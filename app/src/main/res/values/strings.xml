@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">recipe_android_project</string>
+    <string name="app_name">MenuMaster</string>
     <string name="version_1_0">Version 1.0</string>
     <string name="discover_delicious_recipes">Discover Delicious Recipes</string>
     <string name="recipe_app">Recipe App</string>
@@ -11,7 +11,7 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="auth_image">Auth Image</string>
     <string name="ready_to_cook">Ready to cook?</string>
-    <string name="your_personal_meal_planner_awaits_join_mealmate_to_save_your_favorite_recipes">Your personal meal planner awaits. Join MealMate to save your favorite recipes.</string>
+    <string name="your_personal_meal_planner_awaits_join_mealmate_to_save_your_favorite_recipes">Your personal meal planner awaits. Join MenuMaster to save your favorite recipes.</string>
     <string name="sign_up_with_email">Sign Up with Email</string>
     <string name="sign_in">Sign In</string>
     <string name="continue_with_google">Continue With Google</string>
@@ -26,7 +26,7 @@
     <string name="password">Password</string>
     <string name="sign_in_to_continue_planning_your_meals">Sign in to continue planning your meals.</string>
     <string name="welcome_back">Welcome Back</string>
-    <string name="hello_mealmate_com">hello@mealmate.com</string>
+    <string name="hello_mealmate_com">hello@MenuMaster.com</string>
     <string name="create_account">Create Account</string>
     <string name="sign_up_to_start_planning">Sign Up To Start Planning</string>
     <string name="full_name">Full Name</string>
@@ -132,5 +132,33 @@
     <string name="password_too_weak">Password is too weak</string>
     <string name="changing_password">Changing password…</string>
     <string name="ar">ar</string>
+    <!-- AddToPlanDialog -->
+    <string name="meal_type_breakfast">Breakfast</string>
+    <string name="meal_type_lunch">Lunch</string>
+    <string name="meal_type_dinner">Dinner</string>
 
+    <string name="month_january">January</string>
+    <string name="month_february">February</string>
+    <string name="month_march">March</string>
+    <string name="month_april">April</string>
+    <string name="month_may">May</string>
+    <string name="month_june">June</string>
+    <string name="month_july">July</string>
+    <string name="month_august">August</string>
+    <string name="month_september">September</string>
+    <string name="month_october">October</string>
+    <string name="month_november">November</string>
+    <string name="month_december">December</string>
+
+    <string name="error_select_meal_type">Please select meal type</string>
+    <string name="existing_plan_message">\"%1$s\" is already planned for this slot</string>
+    <string name="btn_replace">Replace</string>
+    <string name="btn_add_to_plan">Add to Plan</string>
+    <string name="date_format_display">%1$d%2$s %3$s %4$d</string>
+    <string name="month_year_format">%1$s %2$d</string>
+
+    <string name="day_suffix_st">st</string>
+    <string name="day_suffix_nd">nd</string>
+    <string name="day_suffix_rd">rd</string>
+    <string name="day_suffix_th">th</string>
 </resources>

@@ -16,7 +16,6 @@ import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.core.helper.LocaleHelper;
 import com.example.recipe_android_project.core.helper.SharedPreferencesManager;
 import com.example.recipe_android_project.features.auth.presentation.view.AuthActivity;
-import com.example.recipe_android_project.features.dashboard.presentation.view.DashboardActivity;
 import com.example.recipe_android_project.features.onboarding.presentation.contract.OnboardingContract;
 import com.example.recipe_android_project.features.onboarding.data.local.OnboardingLocalDataSource;
 import com.example.recipe_android_project.features.onboarding.data.repository.OnboardingRepository;
@@ -40,19 +39,10 @@ public class OnboardingActivity extends AppCompatActivity implements OnboardingC
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        initPresenter();
-
-        if (presenter.isOnboardingCompleted()) {
-            if(presenter.isLoggedIn()){
-                navigateToHome();
-            }else{
-                navigateToMain();
-            }
-            return;
-        }
-
+        // No navigation checks here anymore — Splash handles it
         setContentView(R.layout.activity_onboarding);
 
+        initPresenter();
         initViews();
         setupListeners();
         setupViewPagerTransformer();
@@ -119,10 +109,12 @@ public class OnboardingActivity extends AppCompatActivity implements OnboardingC
             ImageView indicator = new ImageView(this);
 
             if (i == 0) {
-                indicator.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.indicator_active));
+                indicator.setImageDrawable(
+                        ContextCompat.getDrawable(this, R.drawable.indicator_active));
                 indicator.setLayoutParams(getActiveParams());
             } else {
-                indicator.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.indicator_inactive));
+                indicator.setImageDrawable(
+                        ContextCompat.getDrawable(this, R.drawable.indicator_inactive));
                 indicator.setLayoutParams(getInactiveParams());
             }
 
@@ -138,10 +130,12 @@ public class OnboardingActivity extends AppCompatActivity implements OnboardingC
             ImageView indicator = (ImageView) layoutIndicators.getChildAt(i);
 
             if (i == position) {
-                indicator.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.indicator_active));
+                indicator.setImageDrawable(
+                        ContextCompat.getDrawable(this, R.drawable.indicator_active));
                 indicator.setLayoutParams(getActiveParams());
             } else {
-                indicator.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.indicator_inactive));
+                indicator.setImageDrawable(
+                        ContextCompat.getDrawable(this, R.drawable.indicator_inactive));
                 indicator.setLayoutParams(getInactiveParams());
             }
         }
@@ -180,9 +174,11 @@ public class OnboardingActivity extends AppCompatActivity implements OnboardingC
 
     @Override
     public void navigateToNextPage() {
-        viewPagerOnboarding.setCurrentItem(viewPagerOnboarding.getCurrentItem() + 1, true);
+        viewPagerOnboarding.setCurrentItem(
+                viewPagerOnboarding.getCurrentItem() + 1, true);
     }
 
+    // Only navigates to Auth after onboarding completes
     @Override
     public void navigateToMain() {
         Intent intent = new Intent(this, AuthActivity.class);
@@ -193,17 +189,10 @@ public class OnboardingActivity extends AppCompatActivity implements OnboardingC
     }
 
     @Override
-    public void navigateToHome() {
-        Intent intent = new Intent(this, DashboardActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-        startActivity(intent);
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-        finish();
-    }
-    @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(LocaleHelper.applyLocale(newBase));
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();

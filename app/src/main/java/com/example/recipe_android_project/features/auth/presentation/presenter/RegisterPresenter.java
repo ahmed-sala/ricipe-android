@@ -335,7 +335,7 @@ public class RegisterPresenter implements RegisterContract.Presenter {
                             if (isViewAttached()) {
                                 getView().hideLoading();
                                 getView().showSuccessDialog(
-                                        "Welcome to MealMate, "
+                                        "Welcome to MenuMaster, "
                                                 + user.getFirstName() + "!",
                                         () -> getView().navigateToHome()
                                 );
