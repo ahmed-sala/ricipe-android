@@ -1,5 +1,6 @@
 package com.example.recipe_android_project.features.meal_detail.presentation.view;
 
+import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -30,6 +31,7 @@ import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.core.ui.AddToPlanDialogHelper;
 import com.example.recipe_android_project.core.ui.AlertDialogHelper;
 import com.example.recipe_android_project.core.ui.SnackbarHelper;
+import com.example.recipe_android_project.features.auth.presentation.view.AuthActivity;
 import com.example.recipe_android_project.features.home.model.Ingredient;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.meal_detail.domain.model.InstructionStep;
@@ -454,9 +456,24 @@ public class MealDetailFragment extends Fragment implements MealDetailContract.V
 
     @Override
     public void showLoginRequired() {
-        if (getView() != null) {
-            SnackbarHelper.showWarning(getView(), getString(R.string.login_required));
-        }
+        AlertDialogHelper.showLoginRequiredDialog(
+                requireContext(),
+                new AlertDialogHelper.OnConfirmDialogListener() {
+                    @Override
+                    public void onConfirm() {
+                        Intent intent = new Intent(requireContext(), AuthActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        if (getActivity() != null) {
+                            getActivity().finish();
+                        }
+                    }
+
+                    @Override
+                    public void onCancel() {
+                    }
+                }
+        );
     }
 
     @Override

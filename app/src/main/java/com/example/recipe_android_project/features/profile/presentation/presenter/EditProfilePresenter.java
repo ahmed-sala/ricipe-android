@@ -4,7 +4,7 @@ import android.content.Context;
 import android.util.Patterns;
 
 import com.example.recipe_android_project.features.auth.domain.model.ProfileData;
-import com.example.recipe_android_project.features.profile.data.datasource.repository.ProfileRepository;
+import com.example.recipe_android_project.features.profile.data.repository.ProfileRepository;
 import com.example.recipe_android_project.features.profile.presentation.contract.EditProfileContract;
 
 import java.lang.ref.WeakReference;

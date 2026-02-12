@@ -1,5 +1,6 @@
 package com.example.recipe_android_project.features.dashboard.presentation.view;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -13,6 +14,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.helper.LocaleHelper;
 import com.example.recipe_android_project.features.dashboard.presentation.contract.DashboardContract;
 import com.example.recipe_android_project.features.dashboard.presentation.presenter.DashboardPresenter;
 import com.google.android.material.badge.BadgeDrawable;
@@ -120,7 +122,10 @@ public class DashboardActivity extends AppCompatActivity
     public boolean onSupportNavigateUp() {
         return navController.navigateUp() || super.onSupportNavigateUp();
     }
-
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase));
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();

@@ -60,6 +60,10 @@ dependencies {
     implementation(libs.adapter.rxjava3)
     implementation(libs.room.rxjava3)
     implementation(libs.core)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+    implementation(libs.play.services.auth)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)

@@ -11,8 +11,10 @@ import com.example.recipe_android_project.features.auth.data.entities.UserEntity
 import com.example.recipe_android_project.features.home.data.entities.FavoriteMealEntity;
 import com.example.recipe_android_project.features.plan.data.entity.MealPlanEntity;
 import com.example.recipe_android_project.features.plan.data.mapper.MealPlanMapper;
+import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -371,4 +373,67 @@ public class AuthRemoteDatasource {
         }
         return entity;
     }
+    @SuppressLint("CheckResult")
+    public Single<UserEntity> signInWithGoogle(String idToken) {
+        return Single.create(emitter -> {
+            AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
+
+            firebaseAuth.signInWithCredential(credential)
+                    .addOnSuccessListener(authResult -> {
+                        FirebaseUser firebaseUser = authResult.getUser();
+                        if (firebaseUser == null) {
+                            emitter.onError(
+                                    new Exception("Google sign-in failed: no user returned"));
+                            return;
+                        }
+
+                        boolean isNewUser = authResult.getAdditionalUserInfo() != null
+                                && authResult.getAdditionalUserInfo().isNewUser();
+
+                        String uid = firebaseUser.getUid();
+                        String email = firebaseUser.getEmail();
+                        String displayName = firebaseUser.getDisplayName();
+                        UserEntity user = new UserEntity();
+                        user.setId(uid);
+                        user.setFullName(displayName != null ? displayName : "");
+                        user.setEmail(email != null ? email : "");
+                        user.setLoggedIn(true);
+                        user.setCreatedAt(System.currentTimeMillis());
+                        user.setUpdatedAt(System.currentTimeMillis());
+
+                        if (isNewUser) {
+                            saveUserToFirestore(user)
+                                    .subscribe(
+                                            () -> emitter.onSuccess(user),
+                                            error -> {
+                                                Log.e(TAG, "Firestore save failed: "
+                                                        + error.getMessage());
+                                                emitter.onSuccess(user);
+                                            }
+                                    );
+                        } else {
+                            getUserFromFirestore(uid)
+                                    .subscribe(
+                                            existingUser -> {
+                                                existingUser.setLoggedIn(true);
+                                                emitter.onSuccess(existingUser);
+                                            },
+                                            error -> emitter.onSuccess(user),
+                                            () -> {
+                                                saveUserToFirestore(user)
+                                                        .subscribe(
+                                                                () -> emitter.onSuccess(user),
+                                                                err -> emitter.onSuccess(user)
+                                                        );
+                                            }
+                                    );
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        emitter.onError(new Exception(
+                                "Google sign-in failed: " + e.getMessage()));
+                    });
+        });
+    }
+
 }

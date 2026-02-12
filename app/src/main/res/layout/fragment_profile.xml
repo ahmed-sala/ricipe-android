@@ -321,7 +321,7 @@
 
             </androidx.cardview.widget.CardView>
 
-            <!-- Logout Card -->
+            <!-- Logout/Login Card -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/card_logout"
                 android:layout_width="0dp"
@@ -388,7 +388,7 @@
 
     </ScrollView>
 
-    <!-- ProgressBar OUTSIDE ScrollView, INSIDE FrameLayout -->
+    <!-- ProgressBar -->
     <ProgressBar
         android:id="@+id/progress_bar"
         android:layout_width="wrap_content"

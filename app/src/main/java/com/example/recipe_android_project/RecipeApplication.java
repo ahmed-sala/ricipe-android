@@ -1,8 +1,9 @@
 package com.example.recipe_android_project;
 
 import android.app.Application;
-import android.util.Log;
+import android.content.Context;
 
+import com.example.recipe_android_project.core.helper.LocaleHelper;
 import com.example.recipe_android_project.core.helper.SyncManager;
 
 import io.reactivex.rxjava3.plugins.RxJavaPlugins;
@@ -11,9 +12,14 @@ public class RecipeApplication extends Application {
     private SyncManager syncManager;
 
     @Override
+    protected void attachBaseContext(Context base) {
+        // Apply saved locale BEFORE anything else
+        super.attachBaseContext(LocaleHelper.applyLocale(base));
+    }
+
+    @Override
     public void onCreate() {
         super.onCreate();
-
         setupRxJavaErrorHandler();
 
         try {
@@ -26,10 +32,11 @@ public class RecipeApplication extends Application {
 
     private void setupRxJavaErrorHandler() {
         RxJavaPlugins.setErrorHandler(throwable -> {
-            if (throwable instanceof io.reactivex.rxjava3.exceptions.UndeliverableException) {
+            if (throwable instanceof
+                    io.reactivex.rxjava3.exceptions
+                            .UndeliverableException) {
                 throwable = throwable.getCause();
             }
         });
     }
-
 }

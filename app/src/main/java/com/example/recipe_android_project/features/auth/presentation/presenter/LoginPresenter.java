@@ -197,6 +197,41 @@ public class LoginPresenter implements LoginContract.Presenter {
     }
 
     @Override
+    public void signInWithGoogle(String idToken) {
+        if (!isViewAttached()) return;
+
+        LoginContract.View view = getView();
+        view.showLoading("Signing in with Google…");
+
+        Disposable disposable = authRepository.signInWithGoogle(idToken)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        user -> {
+                            if (isViewAttached()) {
+                                getView().hideLoading();
+                                String name = user.getFirstName() != null
+                                        && !user.getFirstName().isEmpty()
+                                        ? user.getFirstName()
+                                        : "there";
+                                getView().showSuccessDialog(
+                                        "Welcome, " + name + "!",
+                                        () -> getView().navigateToHome()
+                                );
+                            }
+                        },
+                        error -> {
+                            if (isViewAttached()) {
+                                getView().hideLoading();
+                                getView().showErrorDialog(
+                                        "Google sign-in failed: " + error.getMessage());
+                            }
+                        }
+                );
+
+        disposables.add(disposable);
+    }
+
+    @Override
     public boolean isLoggedIn() {
         return authRepository.isSessionLoggedIn();
     }

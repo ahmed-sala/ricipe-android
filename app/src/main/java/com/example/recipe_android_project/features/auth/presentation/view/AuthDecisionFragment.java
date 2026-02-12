@@ -17,11 +17,21 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.navigation.Navigation;
 
-import com.example.recipe_android_project.MainActivity;
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.helper.GoogleSignInHelper;
+import com.example.recipe_android_project.core.ui.AlertDialogHelper;
+import com.example.recipe_android_project.core.ui.LoadingDialog;
+import com.example.recipe_android_project.core.ui.SnackbarHelper;
+import com.example.recipe_android_project.features.auth.data.repository.AuthRepository;
+import com.example.recipe_android_project.features.dashboard.presentation.view.DashboardActivity;
 import com.google.android.material.button.MaterialButton;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
 
 public class AuthDecisionFragment extends Fragment {
 
@@ -30,6 +40,11 @@ public class AuthDecisionFragment extends Fragment {
     private MaterialButton btnGoogle;
     private TextView btnGuest;
     private TextView textTerms;
+
+    private GoogleSignInHelper googleSignInHelper;
+    private AuthRepository authRepository;
+    private LoadingDialog loadingDialog;
+    private CompositeDisposable disposables;
 
     @Nullable
     @Override
@@ -41,6 +56,11 @@ public class AuthDecisionFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        googleSignInHelper = new GoogleSignInHelper(requireContext());
+        authRepository = new AuthRepository(requireContext());
+        loadingDialog = new LoadingDialog(requireContext());
+        disposables = new CompositeDisposable();
 
         initViews(view);
         setupTermsText();
@@ -76,8 +96,11 @@ public class AuthDecisionFragment extends Fragment {
         }
 
         ClickableSpan termsSpan = new ClickableSpan() {
-            @Override public void onClick(@NonNull View widget) { openTerms(); }
-            @Override public void updateDrawState(@NonNull TextPaint ds) {
+            @Override
+            public void onClick(@NonNull View widget) { openTerms(); }
+
+            @Override
+            public void updateDrawState(@NonNull TextPaint ds) {
                 ds.setColor(primaryColor);
                 ds.setUnderlineText(false);
                 ds.setFakeBoldText(true);
@@ -85,8 +108,11 @@ public class AuthDecisionFragment extends Fragment {
         };
 
         ClickableSpan privacySpan = new ClickableSpan() {
-            @Override public void onClick(@NonNull View widget) { openPrivacy(); }
-            @Override public void updateDrawState(@NonNull TextPaint ds) {
+            @Override
+            public void onClick(@NonNull View widget) { openPrivacy(); }
+
+            @Override
+            public void updateDrawState(@NonNull TextPaint ds) {
                 ds.setColor(primaryColor);
                 ds.setUnderlineText(false);
                 ds.setFakeBoldText(true);
@@ -100,31 +126,117 @@ public class AuthDecisionFragment extends Fragment {
         textTerms.setMovementMethod(LinkMovementMethod.getInstance());
         textTerms.setHighlightColor(Color.TRANSPARENT);
     }
-    private void openTerms() {
 
+    private void openTerms() {
     }
 
     private void openPrivacy() {
-
     }
 
     private void setupClickListeners() {
         btnSignUpEmail.setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.action_authDecisionFragment_to_registerFragment));
+                Navigation.findNavController(v)
+                        .navigate(R.id.action_authDecisionFragment_to_registerFragment));
 
         btnSignIn.setOnClickListener(v ->
-                Navigation.findNavController(v).navigate(R.id.action_authDecisionFragment_to_loginFragment));
+                Navigation.findNavController(v)
+                        .navigate(R.id.action_authDecisionFragment_to_loginFragment));
 
-        btnGoogle.setOnClickListener(v -> {
-        });
+        btnGoogle.setOnClickListener(v -> startGoogleSignIn());
 
         btnGuest.setOnClickListener(v -> navigateToMain());
     }
 
+    private void startGoogleSignIn() {
+        FragmentActivity activity = getActivity();
+        if (activity == null) return;
+
+        googleSignInHelper.signIn(activity, new GoogleSignInHelper.GoogleSignInCallback() {
+            @Override
+            public void onSuccess(String idToken) {
+                activity.runOnUiThread(() -> handleGoogleSignIn(idToken));
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                activity.runOnUiThread(() ->
+                        SnackbarHelper.showError(requireView(), errorMessage));
+            }
+
+            @Override
+            public void onCancelled() {
+            }
+        });
+    }
+
+    private void handleGoogleSignIn(String idToken) {
+        loadingDialog.show("Signing in with Google…");
+        setButtonsEnabled(false);
+
+        Disposable disposable = authRepository.signInWithGoogle(idToken)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        user -> {
+                            loadingDialog.dismiss();
+                            setButtonsEnabled(true);
+
+                            String name = user.getFirstName() != null
+                                    && !user.getFirstName().isEmpty()
+                                    ? user.getFirstName()
+                                    : "there";
+
+                            AlertDialogHelper.showSuccessDialog(
+                                    requireContext(),
+                                    "Welcome, " + name + "!",
+                                    this::navigateToDashboard
+                            );
+                        },
+                        error -> {
+                            loadingDialog.dismiss();
+                            setButtonsEnabled(true);
+
+                            AlertDialogHelper.showErrorDialog(
+                                    requireContext(),
+                                    "Google sign-in failed: " + error.getMessage()
+                            );
+                        }
+                );
+
+        disposables.add(disposable);
+    }
+
+    private void setButtonsEnabled(boolean enabled) {
+        btnSignUpEmail.setEnabled(enabled);
+        btnSignIn.setEnabled(enabled);
+        btnGoogle.setEnabled(enabled);
+        btnGuest.setEnabled(enabled);
+    }
+
+    private void navigateToDashboard() {
+        Intent intent = new Intent(requireActivity(), DashboardActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        requireActivity().finish();
+    }
+
     private void navigateToMain() {
-        Intent intent = new Intent(requireActivity(), MainActivity.class);
+        Intent intent = new Intent(requireActivity(), DashboardActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         requireActivity().finish();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (googleSignInHelper != null) {
+            googleSignInHelper.cancel();
+        }
+        if (loadingDialog != null) {
+            loadingDialog.dismiss();
+        }
+        if (disposables != null) {
+            disposables.clear();
+        }
     }
 }

@@ -1,11 +1,12 @@
 package com.example.recipe_android_project.features.profile.data.datasource.local;
 
-
 import androidx.room.Dao;
 import androidx.room.Query;
 import androidx.room.Update;
 
 import com.example.recipe_android_project.features.auth.data.entities.UserEntity;
+
+import java.util.List;
 
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
@@ -36,11 +37,6 @@ public interface ProfileDao {
     Single<Integer> updateProfileWithPendingSync(String userId, String fullName,
                                                  String email, String syncAction,
                                                  long updatedAt);
-
-    @Update
-    Single<Integer> updateUser(UserEntity user);
-
-
     @Query("UPDATE users SET password = :hashedPassword, updated_at = :updatedAt WHERE id = :userId")
     Single<Integer> updatePassword(String userId, String hashedPassword, long updatedAt);
 
@@ -54,9 +50,16 @@ public interface ProfileDao {
                                                   String newPassword, long updatedAt);
 
 
+    @Query("SELECT * FROM users WHERE pending_sync = 1")
+    Single<List<UserEntity>> getAllPendingSyncUsers();
+
     @Query("UPDATE users SET pending_sync = 0, pending_sync_action = NULL, " +
             "last_synced_at = :syncedAt, updated_at = :updatedAt WHERE id = :userId")
     Single<Integer> clearPendingSyncFlag(String userId, long syncedAt, long updatedAt);
+
+
+    @Query("SELECT * FROM users WHERE pending_password_sync = 1 LIMIT 1")
+    Maybe<UserEntity> getPendingPasswordSyncUser();
 
     @Query("UPDATE users SET pending_password_sync = 0, " +
             "pending_old_password = NULL, pending_new_password = NULL, " +

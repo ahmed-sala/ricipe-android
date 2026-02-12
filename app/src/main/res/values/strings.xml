@@ -131,5 +131,6 @@
     <string name="passwords_do_not_match">Passwords do not match</string>
     <string name="password_too_weak">Password is too weak</string>
     <string name="changing_password">Changing password…</string>
+    <string name="ar">ar</string>
 
 </resources>

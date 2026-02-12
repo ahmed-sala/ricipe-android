@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -21,17 +22,18 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.helper.LocaleHelper;
 import com.example.recipe_android_project.core.ui.AlertDialogHelper;
 import com.example.recipe_android_project.features.auth.domain.model.User;
 import com.example.recipe_android_project.features.auth.domain.model.ProfileData;
+import com.example.recipe_android_project.features.auth.presentation.view.AuthActivity;
 import com.example.recipe_android_project.features.profile.presentation.contract.ProfileContract;
 import com.example.recipe_android_project.features.profile.presentation.presenter.ProfilePresenter;
-import com.example.recipe_android_project.features.auth.presentation.view.AuthActivity;
-import com.example.recipe_android_project.features.auth.presentation.view.ProfileFragmentDirections;
 
 import java.util.Locale;
 
@@ -44,14 +46,24 @@ public class ProfileFragment extends Fragment implements ProfileContract.View {
             layoutChangePassword, layoutLogout;
     private ProgressBar progressBar;
 
+    // Views needed for guest mode toggling
+    private View divider1, divider2;
+    private FrameLayout frameProfileImage;
+    private ImageView ivLogoutIcon;
+    private TextView tvLogoutLabel;
+    private ImageView ivLogoutArrow;
+
     private ProfilePresenter presenter;
 
     private String currentLanguageCode = "en";
+    private boolean isLoggedIn = false;
 
     private static final String PREFS_NAME = "user_prefs";
     private static final String KEY_LANGUAGE_CODE = "language_code";
+
     public ProfileFragment() {
     }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,6 +100,13 @@ public class ProfileFragment extends Fragment implements ProfileContract.View {
         layoutEditUserInfo = view.findViewById(R.id.layout_edit_user_info);
         layoutChangePassword = view.findViewById(R.id.layout_change_password);
         layoutLogout = view.findViewById(R.id.layout_logout);
+
+        divider1 = view.findViewById(R.id.divider_1);
+        divider2 = view.findViewById(R.id.divider_2);
+
+        ivLogoutIcon = view.findViewById(R.id.iv_logout_icon);
+        tvLogoutLabel = view.findViewById(R.id.tv_logout_label);
+        ivLogoutArrow = view.findViewById(R.id.iv_logout_arrow);
     }
 
     private void loadLanguagePreference() {
@@ -106,15 +125,123 @@ public class ProfileFragment extends Fragment implements ProfileContract.View {
 
     private void setClickListeners() {
         if (cardChangePhoto != null) {
-            cardChangePhoto.setOnClickListener(v -> navigateToEditProfile(v));
+            cardChangePhoto.setOnClickListener(v -> {
+                if (isLoggedIn) {
+                    navigateToEditProfile(v);
+                } else {
+                    navigateToLogin();
+                }
+            });
         } else if (ivChangePhoto != null) {
-            ivChangePhoto.setOnClickListener(v -> navigateToEditProfile(v));
+            ivChangePhoto.setOnClickListener(v -> {
+                if (isLoggedIn) {
+                    navigateToEditProfile(v);
+                } else {
+                    navigateToLogin();
+                }
+            });
         }
+
         layoutChangePassword.setOnClickListener(v -> navigateToChangePassword());
         layoutChangeLanguage.setOnClickListener(v -> showLanguageDialog());
         layoutEditUserInfo.setOnClickListener(this::navigateToEditProfile);
-        layoutLogout.setOnClickListener(v -> showLogoutDialog());
+
+        layoutLogout.setOnClickListener(v -> {
+            if (isLoggedIn) {
+                showLogoutDialog();
+            } else {
+                navigateToLogin();
+            }
+        });
     }
+
+
+    @Override
+    public void showGuestMode() {
+        isLoggedIn = false;
+
+        if (tvUserName != null) {
+            tvUserName.setText("Guest");
+        }
+        if (tvUserEmail != null) {
+            tvUserEmail.setText("Sign in to access all features");
+        }
+
+        if (cardChangePhoto != null) {
+            cardChangePhoto.setVisibility(View.GONE);
+        }
+
+        if (layoutEditUserInfo != null) {
+            layoutEditUserInfo.setVisibility(View.GONE);
+        }
+        if (divider1 != null) {
+            divider1.setVisibility(View.GONE);
+        }
+
+        if (layoutChangePassword != null) {
+            layoutChangePassword.setVisibility(View.GONE);
+        }
+        if (divider2 != null) {
+            divider2.setVisibility(View.GONE);
+        }
+
+        updateLoginButton();
+    }
+
+    private void showLoggedInMode() {
+        isLoggedIn = true;
+
+        if (cardChangePhoto != null) {
+            cardChangePhoto.setVisibility(View.VISIBLE);
+        }
+
+        if (layoutEditUserInfo != null) {
+            layoutEditUserInfo.setVisibility(View.VISIBLE);
+        }
+        if (divider1 != null) {
+            divider1.setVisibility(View.VISIBLE);
+        }
+
+        if (layoutChangePassword != null) {
+            layoutChangePassword.setVisibility(View.VISIBLE);
+        }
+        if (divider2 != null) {
+            divider2.setVisibility(View.VISIBLE);
+        }
+
+        updateLogoutButton();
+    }
+
+    private void updateLoginButton() {
+        if (tvLogoutLabel != null) {
+            tvLogoutLabel.setText("Login");
+            tvLogoutLabel.setTextColor(ContextCompat.getColor(requireContext(), R.color.primary));
+        }
+        if (ivLogoutIcon != null) {
+            ivLogoutIcon.setImageResource(R.drawable.ic_login);
+            ivLogoutIcon.setColorFilter(ContextCompat.getColor(requireContext(), R.color.primary));
+        }
+        if (ivLogoutArrow != null) {
+            ivLogoutArrow.setColorFilter(ContextCompat.getColor(requireContext(), R.color.primary));
+        }
+    }
+
+    private void updateLogoutButton() {
+        if (tvLogoutLabel != null) {
+            tvLogoutLabel.setText("Logout");
+            tvLogoutLabel.setTextColor(ContextCompat.getColor(requireContext(), R.color.error));
+        }
+        if (ivLogoutIcon != null) {
+            ivLogoutIcon.setImageResource(R.drawable.ic_logout);
+            ivLogoutIcon.setColorFilter(ContextCompat.getColor(requireContext(), R.color.error));
+        }
+        if (ivLogoutArrow != null) {
+            ivLogoutArrow.setColorFilter(ContextCompat.getColor(requireContext(), R.color.error));
+        }
+    }
+
+    // ==================== NAVIGATION ====================
+
     private void navigateToChangePassword() {
         Navigation.findNavController(requireView())
                 .navigate(R.id.action_profileFragment_to_changePasswordFragment);
@@ -136,6 +263,9 @@ public class ProfileFragment extends Fragment implements ProfileContract.View {
             Toast.makeText(getContext(), "Unable to load profile data", Toast.LENGTH_SHORT).show();
         }
     }
+
+    // ==================== CONTRACT METHODS ====================
+
     @Override
     public void showLoading() {
         if (progressBar != null) {
@@ -152,6 +282,8 @@ public class ProfileFragment extends Fragment implements ProfileContract.View {
 
     @Override
     public void showUserData(User user) {
+        showLoggedInMode();
+
         if (user != null) {
             if (tvUserName != null) {
                 tvUserName.setText(user.getFullName() != null ? user.getFullName() : "User");
@@ -199,52 +331,26 @@ public class ProfileFragment extends Fragment implements ProfileContract.View {
         Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
     }
 
+    // ==================== DIALOGS ====================
+
     private void showLanguageDialog() {
         if (getContext() == null) return;
 
-        Dialog dialog = new Dialog(getContext());
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_language_selector);
+        AlertDialogHelper.showLanguageDialog(
+                getContext(),
+                currentLanguageCode,
+                new AlertDialogHelper.OnLanguageSelectedListener() {
+                    @Override
+                    public void onLanguageSelected(String languageCode) {
+                        presenter.changeLanguage(languageCode);
+                    }
 
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setLayout(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-            );
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            dialog.getWindow().getAttributes().horizontalMargin = 0.1f;
-        }
-
-        ConstraintLayout layoutEnglish = dialog.findViewById(R.id.layout_english);
-        ConstraintLayout layoutArabic = dialog.findViewById(R.id.layout_arabic);
-        ImageView ivEnglishCheck = dialog.findViewById(R.id.iv_english_check);
-        ImageView ivArabicCheck = dialog.findViewById(R.id.iv_arabic_check);
-
-        if (currentLanguageCode.equals("en")) {
-            ivEnglishCheck.setVisibility(View.VISIBLE);
-            ivArabicCheck.setVisibility(View.GONE);
-        } else {
-            ivEnglishCheck.setVisibility(View.GONE);
-            ivArabicCheck.setVisibility(View.VISIBLE);
-        }
-
-        layoutEnglish.setOnClickListener(v -> {
-            if (!currentLanguageCode.equals("en")) {
-                presenter.changeLanguage("en");
-            }
-            dialog.dismiss();
-        });
-
-        layoutArabic.setOnClickListener(v -> {
-            if (!currentLanguageCode.equals("ar")) {
-                presenter.changeLanguage("ar");
-            }
-            dialog.dismiss();
-        });
-
-        dialog.show();
+                    @Override
+                    public void onCancel() {
+                    }
+                }
+        );
     }
-
     private void showLogoutDialog() {
         if (getContext() == null) return;
 
@@ -269,6 +375,7 @@ public class ProfileFragment extends Fragment implements ProfileContract.View {
         );
     }
 
+
     private void saveLanguagePreference(String languageCode) {
         if (getContext() != null) {
             SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -281,14 +388,7 @@ public class ProfileFragment extends Fragment implements ProfileContract.View {
     private void applyLanguageChange(String languageCode) {
         if (getContext() == null) return;
 
-        Locale locale = new Locale(languageCode);
-        Locale.setDefault(locale);
-
-        Configuration config = new Configuration(getResources().getConfiguration());
-        config.setLocale(locale);
-        config.setLayoutDirection(locale);
-
-        getContext().createConfigurationContext(config);
+        LocaleHelper.setLanguage(getContext(), languageCode);
 
         if (getActivity() != null) {
             getActivity().recreate();
@@ -311,6 +411,4 @@ public class ProfileFragment extends Fragment implements ProfileContract.View {
             presenter.detachView();
         }
     }
-
-
 }

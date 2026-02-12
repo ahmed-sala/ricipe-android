@@ -2,7 +2,7 @@ package com.example.recipe_android_project.features.profile.presentation.present
 
 import android.content.Context;
 
-import com.example.recipe_android_project.features.profile.data.datasource.repository.ProfileRepository;
+import com.example.recipe_android_project.features.profile.data.repository.ProfileRepository;
 import com.example.recipe_android_project.features.profile.presentation.contract.ChangePasswordContract;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;

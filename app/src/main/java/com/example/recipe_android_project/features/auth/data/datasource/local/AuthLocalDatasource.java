@@ -203,4 +203,65 @@ public class AuthLocalDatasource {
                     return Single.error(new Exception("Failed to register user"));
                 });
     }
+    public Single<UserEntity> registerOrLoginGoogleUser(String firebaseUid,
+                                                        String fullName,
+                                                        String email) {
+        return userDao.isEmailExists(email)
+                .flatMap(exists -> {
+                    if (exists) {
+                        return userDao.getUserByEmail(email)
+                                .switchIfEmpty(Single.error(
+                                        new Exception("User not found")))
+                                .flatMap(existingUser ->
+                                        userDao.logoutAllUsers()
+                                                .flatMap(ignored ->
+                                                        userDao.updateLoginStatus(
+                                                                existingUser.getId(),
+                                                                true,
+                                                                System.currentTimeMillis()))
+                                                .map(ignored -> {
+                                                    existingUser.setLoggedIn(true);
+                                                    existingUser.setPassword(null);
+
+                                                    sessionManager.createSession(
+                                                            existingUser.getId(),
+                                                            firebaseUid,
+                                                            email,
+                                                            existingUser.getFullName()
+                                                    );
+
+                                                    return existingUser;
+                                                })
+                                );
+                    } else {
+                        UserEntity user = new UserEntity();
+                        user.setId(firebaseUid);
+                        user.setFullName(fullName != null ? fullName : "");
+                        user.setEmail(email);
+                        user.setPassword(null);
+                        user.setLoggedIn(true);
+                        user.setPendingSync(false);
+                        user.setPendingPasswordSync(false);
+                        user.setPendingRegistrationSync(false);
+                        user.setCreatedAt(System.currentTimeMillis());
+                        user.setUpdatedAt(System.currentTimeMillis());
+
+                        return userDao.logoutAllUsers()
+                                .flatMap(ignored -> userDao.insertUser(user))
+                                .flatMap(result -> {
+                                    if (result > 0) {
+                                        sessionManager.createSession(
+                                                user.getId(),
+                                                firebaseUid,
+                                                email,
+                                                fullName
+                                        );
+                                        return Single.just(user);
+                                    }
+                                    return Single.error(
+                                            new Exception("Failed to save Google user locally"));
+                                });
+                    }
+                });
+    }
 }

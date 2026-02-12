@@ -1,3 +1,4 @@
+// features/auth/presentation/contract/LoginContract.java
 package com.example.recipe_android_project.features.auth.presentation.contract;
 
 public interface LoginContract {
@@ -14,7 +15,6 @@ public interface LoginContract {
         void showErrorDialog(String message);
         void showSuccessDialog(String message, Runnable onContinue);
         void showErrorSnackbar(String message);
-        void showSuccessSnackbar(String message);
         void navigateToHome();
         void navigateToForgotPassword();
     }
@@ -27,6 +27,7 @@ public interface LoginContract {
         void validateEmail(String email);
         void validatePassword(String password);
         void login(String email, String password);
+        void signInWithGoogle(String idToken);
         boolean isLoggedIn();
         void onDestroy();
     }

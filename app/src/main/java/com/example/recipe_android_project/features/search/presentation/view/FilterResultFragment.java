@@ -1,5 +1,6 @@
 package com.example.recipe_android_project.features.search.presentation.view;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,6 +20,7 @@ import com.airbnb.lottie.LottieAnimationView;
 import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.core.ui.AlertDialogHelper;
 import com.example.recipe_android_project.core.ui.SnackbarHelper;
+import com.example.recipe_android_project.features.auth.presentation.view.AuthActivity;
 import com.example.recipe_android_project.features.search.data.repository.SearchRepository;
 import com.example.recipe_android_project.features.search.domain.model.FilterParams;
 import com.example.recipe_android_project.features.search.domain.model.FilterResult;
@@ -241,9 +243,24 @@ public class FilterResultFragment extends Fragment implements FilterResultContra
 
     @Override
     public void showLoginRequired() {
-        if (getView() != null) {
-            SnackbarHelper.showWarning(getView(), getString(R.string.login_required));
-        }
+        AlertDialogHelper.showLoginRequiredDialog(
+                requireContext(),
+                new AlertDialogHelper.OnConfirmDialogListener() {
+                    @Override
+                    public void onConfirm() {
+                        Intent intent = new Intent(requireContext(), AuthActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        if (getActivity() != null) {
+                            getActivity().finish();
+                        }
+                    }
+
+                    @Override
+                    public void onCancel() {
+                    }
+                }
+        );
     }
 
 

@@ -1,5 +1,6 @@
 package com.example.recipe_android_project.features.home.presentation.view;
 
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -26,6 +27,7 @@ import com.example.recipe_android_project.R;
 import com.example.recipe_android_project.core.listeners.OnMealClickListener;
 import com.example.recipe_android_project.core.ui.AlertDialogHelper;
 import com.example.recipe_android_project.core.ui.SnackbarHelper;
+import com.example.recipe_android_project.features.auth.presentation.view.AuthActivity;
 import com.example.recipe_android_project.features.home.model.Category;
 import com.example.recipe_android_project.features.home.model.Meal;
 import com.example.recipe_android_project.features.home.presentation.contract.HomeContract;
@@ -327,11 +329,23 @@ public class HomeFragment extends Fragment implements HomeContract.View, OnMealC
 
     @Override
     public void showLoginRequired() {
-        if (getView() != null) {
-            SnackbarHelper.showWarning(getView(), getString(R.string.login_required));
-        }
-
-
+        AlertDialogHelper.showLoginRequiredDialog(
+                requireContext(),
+                new AlertDialogHelper.OnConfirmDialogListener() {
+                    @Override
+                    public void onConfirm() {
+                        Intent intent = new Intent(requireContext(), AuthActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        if (getActivity() != null) {
+                            getActivity().finish();
+                        }
+                    }
+                    @Override
+                    public void onCancel() {
+                    }
+                }
+        );
     }
 
 

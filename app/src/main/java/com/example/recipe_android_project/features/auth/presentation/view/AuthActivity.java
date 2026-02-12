@@ -1,5 +1,6 @@
 package com.example.recipe_android_project.features.auth.presentation.view;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -11,6 +12,7 @@ import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.helper.LocaleHelper;
 
 public class AuthActivity extends AppCompatActivity {
 
@@ -42,5 +44,9 @@ public class AuthActivity extends AppCompatActivity {
     @Override
     public boolean onSupportNavigateUp() {
         return navController.navigateUp() || super.onSupportNavigateUp();
+    }
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase));
     }
 }

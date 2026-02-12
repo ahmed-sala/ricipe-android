@@ -1,6 +1,5 @@
 package com.example.recipe_android_project.features.profile.data.datasource.local;
 
-
 import android.content.Context;
 import android.util.Log;
 
@@ -9,6 +8,9 @@ import com.example.recipe_android_project.core.helper.UserSessionManager;
 import com.example.recipe_android_project.core.utils.PasswordHasher;
 import com.example.recipe_android_project.features.auth.data.entities.UserEntity;
 
+import java.util.List;
+
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 
 public class ProfileLocalDatasource {
@@ -57,20 +59,23 @@ public class ProfileLocalDatasource {
                 });
     }
 
+
     public Single<Boolean> updateProfile(String userId, String fullName, String email) {
         return checkEmailAvailability(userId, email)
                 .flatMap(isAvailable -> {
                     if (!isAvailable) {
                         return Single.error(new Exception("Email already in use"));
                     }
-                    return profileDao.updateProfile(userId, fullName, email, System.currentTimeMillis())
-                            .map(rows -> {
-                                if (rows > 0) {
-                                    sessionManager.updateUserInfo(fullName, email);
-                                    return true;
-                                }
-                                return false;
-                            });
+                    return profileDao.updateProfile(
+                            userId, fullName, email, System.currentTimeMillis()
+                    ).map(rows -> {
+                        if (rows > 0) {
+                            sessionManager.updateUserInfo(fullName, email);
+                            Log.d(TAG, "Profile updated locally");
+                            return true;
+                        }
+                        return false;
+                    });
                 });
     }
 
@@ -87,7 +92,7 @@ public class ProfileLocalDatasource {
                     ).map(rows -> {
                         if (rows > 0) {
                             sessionManager.updateUserInfo(fullName, email);
-                            Log.d(TAG, "Profile updated locally with pending sync");
+                            Log.d(TAG, "Profile updated with pending sync");
                             return true;
                         }
                         return false;
@@ -108,7 +113,8 @@ public class ProfileLocalDatasource {
     }
 
     public Single<Boolean> updatePasswordWithPendingSync(String userId, String hashedPassword,
-                                                         String oldPlainPassword, String newPlainPassword) {
+                                                         String oldPlainPassword,
+                                                         String newPlainPassword) {
         return profileDao.updatePasswordWithPendingSync(
                 userId, hashedPassword, true,
                 oldPlainPassword, newPlainPassword,
@@ -117,10 +123,9 @@ public class ProfileLocalDatasource {
     }
 
 
-    public Single<Boolean> isEmailExists(String email) {
-        return profileDao.isEmailExists(email);
+    public Single<List<UserEntity>> getAllPendingSyncUsers() {
+        return profileDao.getAllPendingSyncUsers();
     }
-
 
     public Single<Boolean> clearPendingSyncFlag(String userId) {
         long now = System.currentTimeMillis();
@@ -128,10 +133,20 @@ public class ProfileLocalDatasource {
                 .map(rows -> rows > 0);
     }
 
+
+    public Maybe<UserEntity> getPendingPasswordSyncUser() {
+        return profileDao.getPendingPasswordSyncUser();
+    }
+
     public Single<Boolean> clearPasswordSyncFlag(String userId) {
         long now = System.currentTimeMillis();
         return profileDao.clearPasswordSyncFlag(userId, now, now)
                 .map(rows -> rows > 0);
+    }
+
+
+    public Single<Boolean> isEmailExists(String email) {
+        return profileDao.isEmailExists(email);
     }
 
 

@@ -18,9 +18,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.navigation.Navigation;
 
 import com.example.recipe_android_project.R;
+import com.example.recipe_android_project.core.helper.GoogleSignInHelper;
 import com.example.recipe_android_project.core.ui.AlertDialogHelper;
 import com.example.recipe_android_project.core.ui.LoadingDialog;
 import com.example.recipe_android_project.core.ui.SnackbarHelper;
@@ -42,6 +44,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
 
     private LoginPresenter presenter;
     private LoadingDialog loadingDialog;
+    private GoogleSignInHelper googleSignInHelper;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -123,14 +126,33 @@ public class LoginFragment extends Fragment implements LoginContract.View {
 
         tvForgot.setOnClickListener(v -> navigateToForgotPassword());
 
-        btnGoogle.setOnClickListener(v ->
-                showErrorSnackbar("Google Sign-In coming soon!")
-        );
+        btnGoogle.setOnClickListener(v -> startGoogleSignIn());
 
         btnLogin.setOnClickListener(v -> {
             String email = getTextFromEditText(emailEt);
             String password = getTextFromEditText(passEt);
             presenter.login(email, password);
+        });
+    }
+
+    private void startGoogleSignIn() {
+        FragmentActivity activity = getActivity();
+        if (activity == null) return;
+
+        googleSignInHelper.signIn(activity, new GoogleSignInHelper.GoogleSignInCallback() {
+            @Override
+            public void onSuccess(String idToken) {
+                activity.runOnUiThread(() -> presenter.signInWithGoogle(idToken));
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                activity.runOnUiThread(() -> showErrorSnackbar(errorMessage));
+            }
+
+            @Override
+            public void onCancelled() {
+            }
         });
     }
 
@@ -198,24 +220,16 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     }
 
     @Override
-    public void showEmailError(String message) {
-        emailTil.setError(message);
-    }
+    public void showEmailError(String message) { emailTil.setError(message); }
 
     @Override
-    public void showPasswordError(String message) {
-        passTil.setError(message);
-    }
+    public void showPasswordError(String message) { passTil.setError(message); }
 
     @Override
-    public void clearEmailError() {
-        emailTil.setError(null);
-    }
+    public void clearEmailError() { emailTil.setError(null); }
 
     @Override
-    public void clearPasswordError() {
-        passTil.setError(null);
-    }
+    public void clearPasswordError() { passTil.setError(null); }
 
     @Override
     public void clearErrors() {
@@ -224,9 +238,7 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     }
 
     @Override
-    public void setLoginButtonEnabled(boolean enabled) {
-        btnLogin.setEnabled(enabled);
-    }
+    public void setLoginButtonEnabled(boolean enabled) { btnLogin.setEnabled(enabled); }
 
     @Override
     public void showErrorDialog(String message) {
@@ -235,21 +247,12 @@ public class LoginFragment extends Fragment implements LoginContract.View {
 
     @Override
     public void showSuccessDialog(String message, Runnable onContinue) {
-        AlertDialogHelper.showSuccessDialog(
-                requireContext(),
-                message,
-                onContinue::run
-        );
+        AlertDialogHelper.showSuccessDialog(requireContext(), message, onContinue::run);
     }
 
     @Override
     public void showErrorSnackbar(String message) {
         SnackbarHelper.showError(requireView(), message);
-    }
-
-    @Override
-    public void showSuccessSnackbar(String message) {
-        SnackbarHelper.showSuccess(requireView(), message);
     }
 
     @Override
@@ -268,7 +271,9 @@ public class LoginFragment extends Fragment implements LoginContract.View {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-
+        if (googleSignInHelper != null) {
+            googleSignInHelper.cancel();
+        }
         if (loadingDialog != null) {
             loadingDialog.dismiss();
         }

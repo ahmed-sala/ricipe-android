@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">recipe_android_project</string>
+    <string name="version_1_0">الإصدار 1.0</string>
+    <string name="discover_delicious_recipes">اكتشف وصفات شهية</string>
+    <string name="recipe_app">تطبيق الوصفات</string>
+    <string name="skip">تخطي</string>
+    <string name="next">التالي</string>
+    <string name="get_started">ابدأ الآن</string>
+    <string name="onboarding_image">صورة الترحيب</string>
+    <string name="hello_blank_fragment">مرحباً بالصفحة الفارغة</string>
+    <string name="auth_image">صورة المصادقة</string>
+    <string name="ready_to_cook">مستعد للطبخ؟</string>
+    <string name="your_personal_meal_planner_awaits_join_mealmate_to_save_your_favorite_recipes">مخطط وجباتك الشخصي في انتظارك. انضم إلى MealMate لحفظ وصفاتك المفضلة.</string>
+    <string name="sign_up_with_email">التسجيل بالبريد الإلكتروني</string>
+    <string name="sign_in">تسجيل الدخول</string>
+    <string name="continue_with_google">المتابعة مع جوجل</string>
+    <string name="continue_as_guest">المتابعة كزائر</string>
+    <string name="terms_privacy_full">بالمتابعة فإنك توافق على %1$s و %2$s</string>
+    <string name="terms">الشروط</string>
+    <string name="privacy_policy">سياسة الخصوصية</string>
+    <string name="or">أو</string>
+    <string name="log_in">تسجيل الدخول</string>
+    <string name="forgot_password">نسيت كلمة المرور؟</string>
+    <string name="email">البريد الإلكتروني</string>
+    <string name="password">كلمة المرور</string>
+    <string name="sign_in_to_continue_planning_your_meals">سجّل الدخول لمتابعة تخطيط وجباتك.</string>
+    <string name="welcome_back">مرحباً بعودتك</string>
+    <string name="hello_mealmate_com">hello@mealmate.com</string>
+    <string name="create_account">إنشاء حساب</string>
+    <string name="sign_up_to_start_planning">سجّل لبدء التخطيط</string>
+    <string name="full_name">الاسم الكامل</string>
+    <string name="ahmed_salah">أحمد صلاح</string>
+    <string name="register">تسجيل</string>
+    <string name="try_again">حاول مجدداً</string>
+    <string name="something_went_wrong">حدث خطأ ما</string>
+    <string name="oops">عذراً!</string>
+    <string name="please_wait">يرجى الانتظار…</string>
+    <string name="logging_in">جارٍ تسجيل الدخول…</string>
+    <string name="creating_account">جارٍ إنشاء الحساب…</string>
+    <string name="success">تم بنجاح!</string>
+    <string name="continue_text">متابعة</string>
+    <string name="ok">حسناً</string>
+    <string name="profile">الملف الشخصي</string>
+    <string name="plan">الخطة</string>
+    <string name="favourites">المفضلة</string>
+    <string name="search">بحث</string>
+    <string name="home">الرئيسية</string>
+    <string name="what_do_you_want_to_cook_today">ماذا تريد أن تطبخ اليوم؟</string>
+    <string name="meal_of_the_day">وجبة اليوم</string>
+    <string name="view_all">عرض الكل</string>
+    <string name="suggested_meals">وجبات مقترحة</string>
+    <string name="categories">الفئات</string>
+    <string name="hello_chef">مرحباً يا شيف! 👋</string>
+    <string name="spaghetti_carbonara">سباغيتي كاربونارا</string>
+    <string name="pasta">معكرونة</string>
+    <string name="type_to_start_searching_for_delicious_meals">اكتب لبدء البحث عن وجبات شهية</string>
+    <string name="search_for_meals">البحث عن وجبات</string>
+    <string name="search_ingredients_countries">البحث عن مكونات، بلدان...</string>
+    <string name="close">إغلاق</string>
+    <string name="remove_favorite">إزالة من المفضلة</string>
+    <string name="remove_favorite_message">هل أنت متأكد أنك تريد إزالة \"%1$s\" من المفضلة؟</string>
+    <string name="cancel">إلغاء</string>
+    <string name="confirm">تأكيد</string>
+    <string name="added_to_favorites">تمت الإضافة إلى المفضلة</string>
+    <string name="removed_from_favorites">تمت الإزالة من المفضلة</string>
+    <string name="login_required">يرجى تسجيل الدخول لإضافة المفضلة</string>
+    <string name="favorite_error">فشل تحديث المفضلة</string>
+    <string name="remove_favorite_confirm_message">هل أنت متأكد أنك تريد إزالة هذه الوجبة من المفضلة؟</string>
+    <string name="my_favorites">مفضلاتي</string>
+    <string name="search_favorites_hint">البحث في المفضلة…</string>
+    <string name="no_favorites_yet">لا توجد مفضلات بعد</string>
+    <string name="no_favorites_subtitle">ابدأ بإضافة وصفاتك المفضلة وستظهر هنا</string>
+    <string name="no_results_found">لم يتم العثور على نتائج</string>
+    <string name="no_favorites_match">لا توجد مفضلات تطابق \'%1$s\'</string>
+    <string name="favorite_removed">تمت إزالة المفضلة</string>
+    <string name="favorite_removed_name">تمت إزالة %1$s من المفضلة</string>
+    <string name="favorite_restored">تمت استعادة المفضلة</string>
+    <string name="undo">تراجع</string>
+    <string name="remove_favorite_title">إزالة من المفضلة؟</string>
+    <string name="search_meals_ingredients_countries">البحث عن وجبات، مكونات، بلدان...</string>
+    <string name="voice_search">البحث الصوتي</string>
+    <string name="clear_search">مسح البحث</string>
+    <string name="meals">الوجبات</string>
+    <string name="ingredients">المكونات</string>
+    <string name="country">البلد</string>
+    <string name="try_searching_with_different_keywords">حاول البحث بكلمات مختلفة</string>
+    <string name="add_to_plan">إضافة إلى الخطة</string>
+    <string name="add_to_weekly_plan">إضافة إلى الخطة الأسبوعية</string>
+    <string name="select_date">اختر التاريخ</string>
+    <string name="select_meal_type">اختر نوع الوجبة</string>
+    <string name="choose_meal_type">اختر نوع الوجبة</string>
+    <string name="breakfast">فطور</string>
+    <string name="lunch">غداء</string>
+    <string name="dinner">عشاء</string>
+    <string name="replace">استبدال</string>
+    <string name="remove">إزالة</string>
+    <string name="plan_added_success">تمت إضافة الوجبة إلى الخطة بنجاح!</string>
+    <string name="plan_updated_success">تم تحديث خطة الوجبات بنجاح!</string>
+    <string name="plan_removed_success">تمت إزالة خطة الوجبة بنجاح!</string>
+    <string name="meal_already_planned">الوجبة مخططة بالفعل</string>
+    <string name="plan_exists_message">لديك بالفعل وجبة مخططة لهذا الوقت.</string>
+    <string name="do_you_want_to_replace">هل تريد استبدالها؟</string>
+    <string name="remove_meal_plan">إزالة خطة الوجبة؟</string>
+    <string name="remove_plan_message">هل أنت متأكد أنك تريد إزالة هذه الوجبة من خطتك؟</string>
+    <string name="profile_image">صورة الملف الشخصي</string>
+    <string name="arrow">سهم</string>
+    <string name="logout_icon">أيقونة تسجيل الخروج</string>
+    <string name="logout">تسجيل الخروج</string>
+    <string name="logout_confirm_message">هل أنت متأكد أنك تريد تسجيل الخروج؟ ستحتاج إلى تسجيل الدخول مرة أخرى للوصول إلى حسابك.</string>
+    <string name="changes_will_sync_automatically_when_you_re_back_online">ستتم مزامنة التغييرات تلقائياً عند عودتك للاتصال بالإنترنت</string>
+    <string name="enter_your_full_name">أدخل اسمك الكامل</string>
+    <string name="save_changes">حفظ التغييرات</string>
+    <string name="edit_profile">تعديل الملف الشخصي</string>
+    <string name="back">رجوع</string>
+    <string name="change_password">تغيير كلمة المرور</string>
+    <string name="change_password_description">أنشئ كلمة مرور جديدة لحسابك. تأكد من أنها قوية وآمنة.</string>
+    <string name="current_password">كلمة المرور الحالية</string>
+    <string name="new_password">كلمة المرور الجديدة</string>
+    <string name="confirm_new_password">تأكيد كلمة المرور الجديدة</string>
+    <string name="enter_current_password">أدخل كلمة المرور الحالية</string>
+    <string name="enter_new_password">أدخل كلمة المرور الجديدة</string>
+    <string name="confirm_your_new_password">أكّد كلمة المرور الجديدة</string>
+    <string name="password_requirements">8 أحرف على الأقل تتضمن أحرف كبيرة وصغيرة ورقم ورمز خاص</string>
+    <string name="password_will_sync_when_online">ستتم مزامنة تغيير كلمة المرور تلقائياً عند عودتك للاتصال بالإنترنت</string>
+    <string name="password_changed_successfully">تم تغيير كلمة المرور بنجاح</string>
+    <string name="passwords_do_not_match">كلمات المرور غير متطابقة</string>
+    <string name="password_too_weak">كلمة المرور ضعيفة جداً</string>
+    <string name="changing_password">جارٍ تغيير كلمة المرور…</string>
+    <string name="ar">ar</string>
+</resources>
