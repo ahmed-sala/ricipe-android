@@ -24,4 +24,7 @@ public class FavouriteLocalDatasource {
     public Completable removeFromFavorites(String mealId, String userId) {
         return favouriteDao.deleteFavoriteByMealIdAndUserId(mealId, userId);
     }
+    public Completable addToFavorites(FavoriteMealEntity favoriteMealEntity) {
+        return favouriteDao.insertFavorite(favoriteMealEntity);
+    }
 }

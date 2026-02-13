@@ -25,6 +25,7 @@ import com.example.recipe_android_project.features.plan.domain.model.DayModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.imageview.ShapeableImageView;
 
+import java.util.Calendar;
 import java.util.Locale;
 
 public class AddToPlanDialogHelper {
@@ -108,10 +109,10 @@ public class AddToPlanDialogHelper {
             );
         }
 
-        java.util.Calendar today = java.util.Calendar.getInstance();
-        todayDay = today.get(java.util.Calendar.DAY_OF_MONTH);
-        todayMonth = today.get(java.util.Calendar.MONTH);
-        todayYear = today.get(java.util.Calendar.YEAR);
+        Calendar today = Calendar.getInstance();
+        todayDay = today.get(Calendar.DAY_OF_MONTH);
+        todayMonth = today.get(Calendar.MONTH);
+        todayYear = today.get(Calendar.YEAR);
 
         selectedDay = todayDay;
         selectedMonth = todayMonth;
@@ -179,12 +180,12 @@ public class AddToPlanDialogHelper {
     }
 
     private boolean canNavigateToPreviousMonth() {
-        java.util.Calendar cal = java.util.Calendar.getInstance();
+        Calendar cal =Calendar.getInstance();
         cal.set(selectedYear, selectedMonth, 1);
-        cal.add(java.util.Calendar.MONTH, -1);
+        cal.add(Calendar.MONTH, -1);
 
-        int prevMonth = cal.get(java.util.Calendar.MONTH);
-        int prevYear = cal.get(java.util.Calendar.YEAR);
+        int prevMonth = cal.get(Calendar.MONTH);
+        int prevYear = cal.get(Calendar.YEAR);
         return !(prevYear < todayYear || (prevYear == todayYear && prevMonth < todayMonth));
     }
 

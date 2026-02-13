@@ -2,6 +2,8 @@ package com.example.recipe_android_project.features.favourites.data.datasource.l
 
 import androidx.room.Dao;
 import androidx.room.Delete;
+import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
 import com.example.recipe_android_project.features.home.data.entities.FavoriteMealEntity;
@@ -20,5 +22,7 @@ public interface FavouriteDao {
     Flowable<List<FavoriteMealEntity>> getAllFavoritesByUserId(String userId);
     @Query("SELECT EXISTS(SELECT 1 FROM favorite_meals WHERE meal_id = :mealId AND user_id = :userId)")
     Single<Boolean> isFavorite(String mealId, String userId);
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    Completable insertFavorite(FavoriteMealEntity meal);
 
 }

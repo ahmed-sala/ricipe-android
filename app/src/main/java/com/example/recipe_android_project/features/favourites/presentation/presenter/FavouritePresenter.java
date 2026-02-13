@@ -189,38 +189,131 @@ public class FavouritePresenter implements FavouriteContract.Presenter {
     public void confirmRemoveFavorite(Meal meal) {
         if (!isViewAttached() || meal == null) return;
 
-        executePendingRemoveImmediately();
+        // Cancel any previous pending undo
+        cancelPendingUndo();
 
-        pendingRemovePosition = findMealPosition(meal.getId());
-        if (pendingRemovePosition == -1) return;
+        int position = findMealPosition(meal.getId());
+        if (position == -1) return;
 
         pendingRemoveMeal = meal;
+        pendingRemovePosition = position;
 
         boolean wasLastItem = allFavorites.size() == 1;
-
         isRemovingLastItem = wasLastItem;
 
-        allFavorites.remove(pendingRemovePosition);
+        // 1. Remove from local list immediately
+        allFavorites.remove(position);
 
+        // 2. Update UI
         if (wasLastItem) {
             view.showEmptyState();
         } else {
             filterFavorites(currentQuery);
         }
 
+        // 3. *** REMOVE FROM DATABASE IMMEDIATELY ***
+        Disposable removeDisposable = repository
+                .removeFromFavorites(meal)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            // Successfully removed from DB
+                        },
+                        throwable -> {
+                            if (isViewAttached()) {
+                                // Removal failed — restore the item
+                                restoreMealToList(meal, position);
+                                filterFavorites(currentQuery);
+                                view.onRemoveError(
+                                        getErrorMessage(throwable,
+                                                "Failed to remove favorite"));
+                            }
+                        }
+                );
+        disposables.add(removeDisposable);
+
+        // 4. Show undo snackbar (undo will RE-ADD)
         view.showUndoSnackbar(meal);
 
+        // 5. Timer just to clear the pending undo reference
         pendingRemoveDisposable = Observable
                 .timer(UNDO_TIMEOUT, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        tick -> executePendingRemove(),
-                        throwable -> executePendingRemove()
+                        tick -> clearPendingUndo(),
+                        throwable -> clearPendingUndo()
                 );
         disposables.add(pendingRemoveDisposable);
     }
+    @Override
+    public void undoRemove() {
+        if (pendingRemoveMeal == null) return;
 
+        // Cancel the cleanup timer
+        if (pendingRemoveDisposable != null
+                && !pendingRemoveDisposable.isDisposed()) {
+            pendingRemoveDisposable.dispose();
+            pendingRemoveDisposable = null;
+        }
+
+        Meal restoredMeal = pendingRemoveMeal;
+        int restorePosition = pendingRemovePosition;
+
+        clearPendingUndo();
+
+        // 1. Restore to local list
+        restoreMealToList(restoredMeal, restorePosition);
+
+        // 2. Update UI
+        if (isViewAttached()) {
+            filterFavorites(currentQuery);
+            view.onFavoriteRestored(restoredMeal);
+        }
+
+        // 3. *** RE-ADD TO DATABASE ***
+        Disposable disposable = repository
+                .addToFavorites(restoredMeal)  // <-- You need this method
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        () -> {
+                            // Successfully re-added
+                        },
+                        throwable -> {
+                            if (isViewAttached()) {
+                                view.onRemoveError(
+                                        getErrorMessage(throwable,
+                                                "Failed to restore favorite"));
+                            }
+                        }
+                );
+        disposables.add(disposable);
+    }
+    private void restoreMealToList(Meal meal, int position) {
+        isRemovingLastItem = false;
+        if (position >= 0 && position <= allFavorites.size()) {
+            allFavorites.add(position, meal);
+        } else {
+            allFavorites.add(0, meal);
+        }
+    }
+
+    private void clearPendingUndo() {
+        pendingRemoveMeal = null;
+        pendingRemovePosition = -1;
+        isRemovingLastItem = false;
+    }
+
+    private void cancelPendingUndo() {
+        if (pendingRemoveDisposable != null
+                && !pendingRemoveDisposable.isDisposed()) {
+            pendingRemoveDisposable.dispose();
+            pendingRemoveDisposable = null;
+        }
+        clearPendingUndo();
+    }
     private int findMealPosition(String mealId) {
         if (mealId == null) return -1;
         for (int i = 0; i < allFavorites.size(); i++) {
@@ -231,40 +324,6 @@ public class FavouritePresenter implements FavouriteContract.Presenter {
         }
         return -1;
     }
-
-
-
-    @Override
-    public void undoRemove() {
-        if (pendingRemoveMeal == null) return;
-
-        if (pendingRemoveDisposable != null
-                && !pendingRemoveDisposable.isDisposed()) {
-            pendingRemoveDisposable.dispose();
-            pendingRemoveDisposable = null;
-        }
-
-        Meal restoredMeal = pendingRemoveMeal;
-        int restorePosition = pendingRemovePosition;
-
-        pendingRemoveMeal = null;
-        pendingRemovePosition = -1;
-        isRemovingLastItem = false;
-
-        if (restorePosition >= 0
-                && restorePosition <= allFavorites.size()) {
-            allFavorites.add(restorePosition, restoredMeal);
-        } else {
-            allFavorites.add(0, restoredMeal);
-        }
-
-        if (isViewAttached()) {
-            filterFavorites(currentQuery);
-            view.onFavoriteRestored(restoredMeal);
-        }
-    }
-
-
     private void executePendingRemoveImmediately() {
         if (pendingRemoveDisposable != null
                 && !pendingRemoveDisposable.isDisposed()) {

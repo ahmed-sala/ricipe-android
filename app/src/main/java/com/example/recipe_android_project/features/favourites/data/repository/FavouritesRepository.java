@@ -6,6 +6,8 @@ import com.airbnb.lottie.animation.content.Content;
 import com.example.recipe_android_project.core.helper.UserSessionManager;
 import com.example.recipe_android_project.features.favourites.data.datasource.local.FavouriteLocalDatasource;
 import com.example.recipe_android_project.features.favourites.data.datasource.remote.FavouriteRemoteDatasource;
+import com.example.recipe_android_project.features.home.data.entities.FavoriteMealEntity;
+import com.example.recipe_android_project.features.home.data.mapper.MealMapper;
 import com.example.recipe_android_project.features.home.model.Meal;
 
 import java.util.List;
@@ -48,10 +50,8 @@ public class FavouritesRepository {
             return Completable.error(new IllegalStateException("User not logged in"));
         }
 
-        // Remove from local DB first
         Completable localRemove = favouriteLocalDatasource.removeFromFavorites(mealId, localUserId);
 
-        // Then sync to Firestore
         Completable firestoreSync = Completable.defer(() -> {
             if (firebaseUserId != null && isNetworkAvailable()) {
                 return favouriteRemoteDatasource.removeFavoriteFromFirestore(firebaseUserId, mealId)
@@ -76,5 +76,37 @@ public class FavouritesRepository {
             return Flowable.error(new IllegalStateException("User not logged in"));
         }
         return favouriteLocalDatasource.getFavorites(localUserId);
+    }
+    public Completable addToFavorites(Meal meal) {
+        if (meal == null) {
+            return Completable.error(new IllegalArgumentException("Meal is required"));
+        }
+
+        String localUserId = getLocalUserId();
+        String firebaseUserId = getFirebaseUserId();
+
+        if (localUserId == null) {
+            return Completable.error(new IllegalStateException("User not logged in"));
+        }
+
+        FavoriteMealEntity entity = MealMapper.toEntity(meal, localUserId);
+        if (entity == null) {
+            return Completable.error(new IllegalArgumentException("Failed to create favorite entity"));
+        }
+
+        Completable localSave = favouriteLocalDatasource.addToFavorites(entity);
+
+        Completable firestoreSync = Completable.defer(() -> {
+            if (firebaseUserId != null && isNetworkAvailable()) {
+                FavoriteMealEntity firestoreEntity = MealMapper.toEntity(meal, firebaseUserId);
+                return favouriteRemoteDatasource.addFavoriteToFirestore(firestoreEntity)
+                        .onErrorComplete();
+            }
+            return Completable.complete();
+        });
+
+        return localSave
+                .andThen(firestoreSync)
+                .subscribeOn(Schedulers.io());
     }
 }

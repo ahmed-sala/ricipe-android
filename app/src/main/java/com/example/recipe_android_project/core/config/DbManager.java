@@ -25,7 +25,7 @@ import com.example.recipe_android_project.features.profile.data.datasource.local
                 FavoriteMealEntity.class,
                 MealPlanEntity.class
         },
-        version = 6,
+        version = 1,
         exportSchema = false
 )
 public abstract class DbManager extends RoomDatabase {
@@ -42,70 +42,7 @@ public abstract class DbManager extends RoomDatabase {
 
 
 
-    static final Migration MIGRATION_3_4 = new Migration(3, 4) {
-        @Override
-        public void migrate(@NonNull SupportSQLiteDatabase database) {
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_sync INTEGER NOT NULL DEFAULT 0"
-            );
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_sync_action TEXT"
-            );
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN last_synced_at INTEGER NOT NULL DEFAULT 0"
-            );
-        }
-    };
 
-
-    static final Migration MIGRATION_4_5 = new Migration(4, 5) {
-        @Override
-        public void migrate(@NonNull SupportSQLiteDatabase database) {
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_password_sync INTEGER NOT NULL DEFAULT 0"
-            );
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_new_password TEXT"
-            );
-
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_registration_sync INTEGER NOT NULL DEFAULT 0"
-            );
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_plain_password TEXT"
-            );
-        }
-    };
-
-
-    static final Migration MIGRATION_3_5 = new Migration(3, 5) {
-        @Override
-        public void migrate(@NonNull SupportSQLiteDatabase database) {
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_sync INTEGER NOT NULL DEFAULT 0"
-            );
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_sync_action TEXT"
-            );
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN last_synced_at INTEGER NOT NULL DEFAULT 0"
-            );
-
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_password_sync INTEGER NOT NULL DEFAULT 0"
-            );
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_new_password TEXT"
-            );
-
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_registration_sync INTEGER NOT NULL DEFAULT 0"
-            );
-            database.execSQL(
-                    "ALTER TABLE users ADD COLUMN pending_plain_password TEXT"
-            );
-        }
-    };
 
 
     public static DbManager getInstance(Context context) {
@@ -117,12 +54,6 @@ public abstract class DbManager extends RoomDatabase {
                                     DbManager.class,
                                     DATABASE_NAME
                             )
-                            .addMigrations(
-                                    MIGRATION_3_4,
-                                    MIGRATION_4_5,
-                                    MIGRATION_3_5
-                            )
-                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }

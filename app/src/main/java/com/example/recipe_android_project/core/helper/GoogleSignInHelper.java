@@ -25,7 +25,6 @@ import java.util.concurrent.Executors;
 
 public class GoogleSignInHelper {
 
-    private static final String TAG = "GoogleSignInHelper";
 
     public interface GoogleSignInCallback {
         void onSuccess(String idToken);
@@ -55,7 +54,6 @@ public class GoogleSignInHelper {
                     .addCredentialOption(googleIdOption)
                     .build();
 
-            Log.d(TAG, "Starting Google Sign-In (primary method)...");
 
             credentialManager.getCredentialAsync(
                     activity,
@@ -66,18 +64,15 @@ public class GoogleSignInHelper {
                             GetCredentialException>() {
                         @Override
                         public void onResult(GetCredentialResponse result) {
-                            Log.d(TAG, "Primary method returned result");
                             handleSignInResult(result, callback);
                         }
 
                         @Override
                         public void onError(@NonNull GetCredentialException e) {
-                            Log.e(TAG, "Primary method failed: "
-                                    + e.getClass().getSimpleName(), e);
+
 
                             if (e instanceof NoCredentialException) {
-                                Log.d(TAG, "Falling back to "
-                                        + "GetSignInWithGoogleOption...");
+
                                 activity.runOnUiThread(() ->
                                         signInWithGoogleButton(activity, callback));
                             } else {
@@ -87,7 +82,6 @@ public class GoogleSignInHelper {
                     }
             );
         } catch (Exception e) {
-            Log.e(TAG, "Failed to start Google Sign-In", e);
             callback.onError("Failed to start Google Sign-In: " + e.getMessage());
         }
     }
@@ -107,7 +101,6 @@ public class GoogleSignInHelper {
                     .addCredentialOption(signInOption)
                     .build();
 
-            Log.d(TAG, "Starting Google Sign-In (fallback method)...");
 
             credentialManager.getCredentialAsync(
                     activity,
@@ -118,19 +111,16 @@ public class GoogleSignInHelper {
                             GetCredentialException>() {
                         @Override
                         public void onResult(GetCredentialResponse result) {
-                            Log.d(TAG, "Fallback method returned result");
                             handleSignInResult(result, callback);
                         }
 
                         @Override
                         public void onError(@NonNull GetCredentialException e) {
-                            Log.e(TAG, "Fallback method also failed", e);
                             handleSignInError(e, callback);
                         }
                     }
             );
         } catch (Exception e) {
-            Log.e(TAG, "Fallback sign-in failed", e);
             callback.onError("Google Sign-In failed: " + e.getMessage());
         }
     }
@@ -153,7 +143,6 @@ public class GoogleSignInHelper {
                     String idToken = googleCredential.getIdToken();
 
                     if (idToken != null && !idToken.isEmpty()) {
-                        Log.d(TAG, "Google ID token obtained successfully");
                         callback.onSuccess(idToken);
                     } else {
                         callback.onError("Failed to get Google ID token");
@@ -166,7 +155,6 @@ public class GoogleSignInHelper {
                 callback.onError("Unexpected credential format");
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error parsing Google credential", e);
             callback.onError("Failed to parse Google credential: "
                     + e.getMessage());
         }
@@ -175,10 +163,8 @@ public class GoogleSignInHelper {
     private void handleSignInError(GetCredentialException e,
                                    GoogleSignInCallback callback) {
         if (e instanceof GetCredentialCancellationException) {
-            Log.d(TAG, "User cancelled Google Sign-In");
             callback.onCancelled();
         } else if (e instanceof NoCredentialException) {
-            Log.e(TAG, "No credential available even after fallback");
             callback.onError(
                     "No Google accounts found. Please add a Google account "
                             + "in your device Settings → Accounts → Add Account → Google"
@@ -187,7 +173,6 @@ public class GoogleSignInHelper {
             String message = e.getMessage() != null
                     ? e.getMessage()
                     : "Google Sign-In failed";
-            Log.e(TAG, "Sign-in error: " + message);
             callback.onError(message);
         }
     }

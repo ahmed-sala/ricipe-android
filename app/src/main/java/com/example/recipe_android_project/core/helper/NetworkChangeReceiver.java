@@ -13,24 +13,18 @@ import com.example.recipe_android_project.core.helper.SyncManager;
 
 public class NetworkChangeReceiver extends BroadcastReceiver {
 
-    private static final String TAG = "NetworkChangeReceiver";
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.e(TAG, "★★★ onReceive called ★★★");
 
         if (isNetworkAvailable(context)) {
-            Log.e(TAG, "★★★ Network is available via BroadcastReceiver ★★★");
 
-            // Trigger sync
             try {
                 SyncManager syncManager = SyncManager.getInstance(context);
                 syncManager.forceSyncNow();
             } catch (Exception e) {
-                Log.e(TAG, "Error triggering sync: " + e.getMessage());
             }
         } else {
-            Log.e(TAG, "★★★ Network is NOT available ★★★");
         }
     }
 
