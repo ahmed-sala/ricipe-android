@@ -189,7 +189,6 @@ public class FavouritePresenter implements FavouriteContract.Presenter {
     public void confirmRemoveFavorite(Meal meal) {
         if (!isViewAttached() || meal == null) return;
 
-        // Cancel any previous pending undo
         cancelPendingUndo();
 
         int position = findMealPosition(meal.getId());
@@ -201,28 +200,23 @@ public class FavouritePresenter implements FavouriteContract.Presenter {
         boolean wasLastItem = allFavorites.size() == 1;
         isRemovingLastItem = wasLastItem;
 
-        // 1. Remove from local list immediately
         allFavorites.remove(position);
 
-        // 2. Update UI
         if (wasLastItem) {
             view.showEmptyState();
         } else {
             filterFavorites(currentQuery);
         }
 
-        // 3. *** REMOVE FROM DATABASE IMMEDIATELY ***
         Disposable removeDisposable = repository
                 .removeFromFavorites(meal)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         () -> {
-                            // Successfully removed from DB
                         },
                         throwable -> {
                             if (isViewAttached()) {
-                                // Removal failed — restore the item
                                 restoreMealToList(meal, position);
                                 filterFavorites(currentQuery);
                                 view.onRemoveError(
@@ -233,10 +227,8 @@ public class FavouritePresenter implements FavouriteContract.Presenter {
                 );
         disposables.add(removeDisposable);
 
-        // 4. Show undo snackbar (undo will RE-ADD)
         view.showUndoSnackbar(meal);
 
-        // 5. Timer just to clear the pending undo reference
         pendingRemoveDisposable = Observable
                 .timer(UNDO_TIMEOUT, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
@@ -251,7 +243,6 @@ public class FavouritePresenter implements FavouriteContract.Presenter {
     public void undoRemove() {
         if (pendingRemoveMeal == null) return;
 
-        // Cancel the cleanup timer
         if (pendingRemoveDisposable != null
                 && !pendingRemoveDisposable.isDisposed()) {
             pendingRemoveDisposable.dispose();
@@ -263,23 +254,19 @@ public class FavouritePresenter implements FavouriteContract.Presenter {
 
         clearPendingUndo();
 
-        // 1. Restore to local list
         restoreMealToList(restoredMeal, restorePosition);
 
-        // 2. Update UI
         if (isViewAttached()) {
             filterFavorites(currentQuery);
             view.onFavoriteRestored(restoredMeal);
         }
 
-        // 3. *** RE-ADD TO DATABASE ***
         Disposable disposable = repository
-                .addToFavorites(restoredMeal)  // <-- You need this method
+                .addToFavorites(restoredMeal)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         () -> {
-                            // Successfully re-added
                         },
                         throwable -> {
                             if (isViewAttached()) {
